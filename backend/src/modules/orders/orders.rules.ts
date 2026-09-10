@@ -15,6 +15,12 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+export const PRE_FITTING_STATUSES: readonly OrderStatus[] = [
+  "DRAFT",
+  "CONFIRMED",
+  "IN_PROGRESS"
+];
+
 /**
  * Verbatim transition table from STATE-MACHINES.md#order.
  * Terminal states (COMPLETED, CANCELLED) have empty allowed target lists.

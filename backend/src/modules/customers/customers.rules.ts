@@ -1,3 +1,6 @@
+import type { Prisma } from "@prisma/client";
+import { prisma } from "../../infrastructure/prisma/client.js";
+
 /**
  * Normalizes phone numbers for duplicate comparison and WhatsApp linking.
  * Strips all non-digit characters and standardizes Indonesian prefixes (0 -> 62).
@@ -18,10 +21,17 @@ export function normalizePhone(phone?: string | null): string {
 /**
  * Checks if a customer can be soft-deleted.
  * Per BUSINESS-RULES.md#customer, customer deletion is blocked if active (non-cancelled) orders exist.
- *
- * TODO(TASK-016 or later): enforce order-existence check once the orders table exists.
- * Currently stubbed to return true per TASK-006 specification.
  */
-export async function canDeleteCustomer(_customerId: string): Promise<boolean> {
-  return true;
+export async function canDeleteCustomer(
+  customerId: string,
+  tx: Prisma.TransactionClient = prisma
+): Promise<boolean> {
+  const activeOrder = await tx.order.findFirst({
+    where: {
+      customerId,
+      status: { not: "CANCELLED" }
+    },
+    select: { id: true }
+  });
+  return !activeOrder;
 }

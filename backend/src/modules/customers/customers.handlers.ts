@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/prisma/client.js";
-import { NotFoundError, BusinessRuleViolationError } from "../../shared/errors/index.js";
+import {
+  NotFoundError,
+  BusinessRuleViolationError,
+  ConflictError
+} from "../../shared/errors/index.js";
 import { sendSuccess, buildPaginationMeta } from "../../shared/http/index.js";
 import { recordAudit } from "../audit/index.js";
 import { normalizePhone, canDeleteCustomer } from "./customers.rules.js";
@@ -83,18 +87,19 @@ export async function getCustomerById(
     const { id } = req.params as unknown as CustomerIdParam;
 
     const customer = await prisma.customer.findFirst({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
+      include: {
+        orders: {
+          orderBy: { createdAt: "desc" }
+        }
+      }
     });
 
     if (!customer) {
       throw new NotFoundError("Customer not found");
     }
 
-    // TODO(TASK-016): populate actual order history once orders table is implemented.
-    sendSuccess(res, {
-      ...customer,
-      orders: []
-    });
+    sendSuccess(res, customer);
   } catch (err) {
     next(err);
   }
@@ -224,7 +229,7 @@ export async function deleteCustomer(
 
     const allowed = await canDeleteCustomer(id);
     if (!allowed) {
-      throw new BusinessRuleViolationError("Cannot delete customer with active orders");
+      throw new ConflictError("Cannot delete customer with active orders");
     }
 
     const deleted = await prisma.customer.update({

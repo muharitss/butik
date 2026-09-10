@@ -935,3 +935,483 @@ test("Order Status Transitions API integration tests", async (t) => {
     assert.equal(finalOrder?.status, "IN_PROGRESS");
   });
 });
+
+test("Order List, Detail, Update & Resnapshot API integration tests", async (t) => {
+  let server: Server;
+  let baseUrl = "";
+
+  await new Promise<void>((resolve) => {
+    server = app.listen(0, () => {
+      const address = server.address();
+      if (address && typeof address === "object") {
+        baseUrl = `http://127.0.0.1:${address.port}`;
+      }
+      resolve();
+    });
+  });
+
+  const createdCustomerIds: string[] = [];
+  const createdGarmentTypeIds: string[] = [];
+  const createdOrderIds: string[] = [];
+
+  t.beforeEach(() => {
+    clearAuditLogs();
+  });
+
+  t.after(async () => {
+    server.close();
+
+    if (createdOrderIds.length > 0) {
+      await prisma.orderStatusHistory.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.orderMeasurementSnapshotValue.deleteMany({
+        where: {
+          orderMeasurementSnapshot: {
+            orderId: { in: createdOrderIds }
+          }
+        }
+      });
+      await prisma.orderMeasurementSnapshot.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.order.deleteMany({
+        where: { id: { in: createdOrderIds } }
+      });
+    }
+
+    if (createdCustomerIds.length > 0) {
+      await prisma.measurementValue.deleteMany({
+        where: {
+          measurementVersion: {
+            customerId: { in: createdCustomerIds }
+          }
+        }
+      });
+      await prisma.measurementVersion.deleteMany({
+        where: { customerId: { in: createdCustomerIds } }
+      });
+      await prisma.customer.deleteMany({
+        where: { id: { in: createdCustomerIds } }
+      });
+    }
+
+    if (createdGarmentTypeIds.length > 0) {
+      await prisma.garmentMeasurementField.deleteMany({
+        where: { garmentTypeId: { in: createdGarmentTypeIds } }
+      });
+      await prisma.garmentType.deleteMany({
+        where: { id: { in: createdGarmentTypeIds } }
+      });
+    }
+  });
+
+  async function createTestCustomer(name = "Customer", phone = "081234567890") {
+    const customer = await prisma.customer.create({
+      data: {
+        name: `${name}_${Math.random().toString(36).slice(2, 8)}`,
+        phone
+      }
+    });
+    createdCustomerIds.push(customer.id);
+    return customer;
+  }
+
+  async function createTestMeasurement(
+    customerId: string,
+    versionNumber = 1,
+    values = [{ fieldKey: "chest", value: 95, unit: "cm" }]
+  ) {
+    return prisma.measurementVersion.create({
+      data: {
+        customerId,
+        versionNumber,
+        measuredAt: new Date(),
+        values: {
+          create: values.map((v) => ({
+            fieldKey: v.fieldKey,
+            value: v.value,
+            unit: v.unit
+          }))
+        }
+      },
+      include: { values: true }
+    });
+  }
+
+  async function createTestGarmentType() {
+    const garment = await prisma.garmentType.create({
+      data: {
+        name: `Garment_${Math.random().toString(36).slice(2, 8)}`,
+        isActive: true
+      }
+    });
+    createdGarmentTypeIds.push(garment.id);
+    return garment;
+  }
+
+  async function createOrderDirect(opts: {
+    customerId: string;
+    status?: string;
+    deadlineAt?: Date;
+    subtotal?: number;
+    additionalCost?: number;
+    expressFee?: number;
+    discount?: number;
+    items?: { garmentTypeId: string; quantity: number; unitPrice: number; subtotal: number }[];
+    snapshotValues?: { fieldKey: string; value: number; unit: string }[];
+  }) {
+    const year = new Date().getFullYear();
+    const orderNumber = `JF-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const subtotal = opts.subtotal ?? 100000;
+    const additionalCost = opts.additionalCost ?? 0;
+    const expressFee = opts.expressFee ?? 0;
+    const discount = opts.discount ?? 0;
+    const total = subtotal + additionalCost + expressFee - discount;
+
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        customerId: opts.customerId,
+        status: opts.status ?? "DRAFT",
+        deadlineAt: opts.deadlineAt ?? new Date(Date.now() + 86400000),
+        subtotal,
+        additionalCost,
+        expressFee,
+        discount,
+        total,
+        items: opts.items
+          ? {
+              create: opts.items.map((i) => ({
+                garmentTypeId: i.garmentTypeId,
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                subtotal: i.subtotal
+              }))
+            }
+          : undefined,
+        statusHistories: {
+          create: {
+            fromStatus: null,
+            toStatus: opts.status ?? "DRAFT"
+          }
+        }
+      },
+      include: { items: true, statusHistories: true }
+    });
+    createdOrderIds.push(order.id);
+
+    if (opts.snapshotValues) {
+      let measurement = await prisma.measurementVersion.findFirst({
+        where: { customerId: opts.customerId },
+        orderBy: { versionNumber: "desc" }
+      });
+      if (!measurement) {
+        measurement = await createTestMeasurement(opts.customerId, 1, opts.snapshotValues);
+      }
+      await prisma.orderMeasurementSnapshot.create({
+        data: {
+          orderId: order.id,
+          sourceMeasurementVersionId: measurement.id,
+          values: {
+            create: opts.snapshotValues.map((v) => ({
+              fieldKey: v.fieldKey,
+              value: v.value,
+              unit: v.unit
+            }))
+          }
+        }
+      });
+    }
+
+    return order;
+  }
+
+  await t.test("GET /api/orders returns paginated list with meta", async () => {
+    const customer = await createTestCustomer("__list_cust_1__");
+    await createOrderDirect({ customerId: customer.id });
+    await createOrderDirect({ customerId: customer.id });
+
+    const res = await fetch(`${baseUrl}/api/orders?page=1&pageSize=10`);
+    assert.equal(res.status, 200);
+
+    const json = await res.json();
+    assert.ok(Array.isArray(json.data));
+    assert.ok(json.data.length >= 2);
+    assert.equal(json.meta.page, 1);
+    assert.equal(json.meta.pageSize, 10);
+    assert.ok(json.meta.total >= 2);
+  });
+
+  await t.test("GET /api/orders filters by status", async () => {
+    const customer = await createTestCustomer("__status_filter_cust__");
+    const draftOrder = await createOrderDirect({ customerId: customer.id, status: "DRAFT" });
+    const confirmedOrder = await createOrderDirect({ customerId: customer.id, status: "CONFIRMED" });
+
+    const res = await fetch(`${baseUrl}/api/orders?status=CONFIRMED`);
+    assert.equal(res.status, 200);
+    const json = await res.json();
+
+    assert.ok(json.data.some((o: { id: string }) => o.id === confirmedOrder.id));
+    assert.ok(!json.data.some((o: { id: string }) => o.id === draftOrder.id));
+  });
+
+  await t.test("GET /api/orders searches by q (orderNumber, customer name, phone)", async () => {
+    const customer = await createTestCustomer("UniqueAlphaCustomer", "081987654321");
+    const order = await createOrderDirect({ customerId: customer.id });
+
+    // Search by order number
+    const resByOrderNo = await fetch(`${baseUrl}/api/orders?q=${order.orderNumber}`);
+    assert.equal(resByOrderNo.status, 200);
+    const jsonByOrderNo = await resByOrderNo.json();
+    assert.ok(jsonByOrderNo.data.some((o: { id: string }) => o.id === order.id));
+
+    // Search by customer name
+    const resByName = await fetch(`${baseUrl}/api/orders?q=UniqueAlphaCustomer`);
+    assert.equal(resByName.status, 200);
+    const jsonByName = await resByName.json();
+    assert.ok(jsonByName.data.some((o: { id: string }) => o.id === order.id));
+
+    // Search by phone
+    const resByPhone = await fetch(`${baseUrl}/api/orders?q=081987654321`);
+    assert.equal(resByPhone.status, 200);
+    const jsonByPhone = await resByPhone.json();
+    assert.ok(jsonByPhone.data.some((o: { id: string }) => o.id === order.id));
+  });
+
+  await t.test("GET /api/orders filters by dueBefore and dueAfter", async () => {
+    const customer = await createTestCustomer("__due_filter_cust__");
+    const now = Date.now();
+    const nearDeadline = new Date(now + 2 * 86400000); // in 2 days
+    const farDeadline = new Date(now + 20 * 86400000); // in 20 days
+
+    const nearOrder = await createOrderDirect({ customerId: customer.id, deadlineAt: nearDeadline });
+    const farOrder = await createOrderDirect({ customerId: customer.id, deadlineAt: farDeadline });
+
+    // Filter dueBefore in 5 days
+    const beforeDate = new Date(now + 5 * 86400000).toISOString();
+    const resBefore = await fetch(`${baseUrl}/api/orders?dueBefore=${beforeDate}`);
+    const jsonBefore = await resBefore.json();
+    assert.ok(jsonBefore.data.some((o: { id: string }) => o.id === nearOrder.id));
+    assert.ok(!jsonBefore.data.some((o: { id: string }) => o.id === farOrder.id));
+
+    // Filter dueAfter in 10 days
+    const afterDate = new Date(now + 10 * 86400000).toISOString();
+    const resAfter = await fetch(`${baseUrl}/api/orders?dueAfter=${afterDate}`);
+    const jsonAfter = await resAfter.json();
+    assert.ok(jsonAfter.data.some((o: { id: string }) => o.id === farOrder.id));
+    assert.ok(!jsonAfter.data.some((o: { id: string }) => o.id === nearOrder.id));
+  });
+
+  await t.test("GET /api/orders/:id returns full detail assembled view", async () => {
+    const customer = await createTestCustomer("__detail_cust__");
+    const garment = await createTestGarmentType();
+    const order = await createOrderDirect({
+      customerId: customer.id,
+      items: [
+        {
+          garmentTypeId: garment.id,
+          quantity: 2,
+          unitPrice: 50000,
+          subtotal: 100000
+        }
+      ],
+      snapshotValues: [
+        { fieldKey: "chest", value: 92, unit: "cm" },
+        { fieldKey: "waist", value: 80, unit: "cm" }
+      ]
+    });
+
+    const res = await fetch(`${baseUrl}/api/orders/${order.id}`);
+    assert.equal(res.status, 200);
+
+    const json = await res.json();
+    const data = json.data;
+
+    assert.equal(data.id, order.id);
+    assert.equal(data.orderNumber, order.orderNumber);
+    assert.equal(data.customer.id, customer.id);
+    assert.equal(data.items.length, 1);
+    assert.equal(data.items[0].garmentType.id, garment.id);
+
+    // Active measurement snapshot
+    assert.ok(data.measurementSnapshot);
+    assert.equal(data.measurementSnapshot.values.length, 2);
+
+    // Payments summary
+    assert.ok(data.paymentsSummary);
+    assert.equal(Number(data.paymentsSummary.paidTotal), 0);
+    assert.equal(Number(data.paymentsSummary.remainingBalance), 100000);
+    assert.equal(data.paymentsSummary.paymentStatus, "UNPAID");
+
+    // Sub-resources arrays
+    assert.deepEqual(data.payments, []);
+    assert.deepEqual(data.fittings, []);
+    assert.deepEqual(data.revisions, []);
+    assert.deepEqual(data.attachments, []);
+
+    // Status histories
+    assert.ok(Array.isArray(data.statusHistories));
+    assert.ok(data.statusHistories.length >= 1);
+  });
+
+  await t.test("GET /api/orders/:id returns 404 for non-existent order", async () => {
+    const randomId = "00000000-0000-0000-0000-000000000000";
+    const res = await fetch(`${baseUrl}/api/orders/${randomId}`);
+    assert.equal(res.status, 404);
+    const json = await res.json();
+    assert.equal(json.error.code, "NOT_FOUND");
+  });
+
+  await t.test("PATCH /api/orders/:id updates mutable fields and recomputes total", async () => {
+    const customer = await createTestCustomer("__patch_cust__");
+    const order = await createOrderDirect({
+      customerId: customer.id,
+      subtotal: 200000,
+      additionalCost: 10000,
+      expressFee: 0,
+      discount: 0
+    });
+
+    const newDeadline = new Date(Date.now() + 5 * 86400000).toISOString();
+    const updatePayload = {
+      deadlineAt: newDeadline,
+      notes: "Updated order notes",
+      additionalCost: 20000,
+      expressFee: 15000,
+      discount: 10000
+    };
+
+    const res = await fetch(`${baseUrl}/api/orders/${order.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-actor-id": "00000000-0000-0000-0000-000000000000"
+      },
+      body: JSON.stringify(updatePayload)
+    });
+
+    assert.equal(res.status, 200);
+    const json = await res.json();
+    const data = json.data;
+
+    assert.equal(data.notes, "Updated order notes");
+    assert.equal(Number(data.additionalCost), 20000);
+    assert.equal(Number(data.expressFee), 15000);
+    assert.equal(Number(data.discount), 10000);
+    // 200,000 + 20,000 + 15,000 - 10,000 = 225,000
+    assert.equal(Number(data.total), 225000);
+
+    const logs = getAuditLogs();
+    assert.ok(logs.some((l) => l.entityId === order.id && l.action === "update"));
+  });
+
+  await t.test("PATCH /api/orders/:id rejects negative total after discount", async () => {
+    const customer = await createTestCustomer("__negative_patch_cust__");
+    const order = await createOrderDirect({
+      customerId: customer.id,
+      subtotal: 50000
+    });
+
+    const res = await fetch(`${baseUrl}/api/orders/${order.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discount: 100000 })
+    });
+
+    assert.equal(res.status, 400);
+    const json = await res.json();
+    assert.equal(json.error.code, "VALIDATION_ERROR");
+  });
+
+  await t.test("PATCH /api/orders/:id rejects update if status is beyond CONFIRMED (409)", async () => {
+    const customer = await createTestCustomer("__blocked_patch_cust__");
+    const order = await createOrderDirect({
+      customerId: customer.id,
+      status: "IN_PROGRESS"
+    });
+
+    const res = await fetch(`${baseUrl}/api/orders/${order.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: "Cannot update in progress" })
+    });
+
+    assert.equal(res.status, 409);
+    const json = await res.json();
+    assert.equal(json.error.code, "BUSINESS_RULE_VIOLATION");
+  });
+
+  await t.test("POST /api/orders/:id/resnapshot supersedes old snapshot and creates new one with audit log", async () => {
+    const customer = await createTestCustomer("__resnapshot_cust__");
+
+    // Version 1: chest: 90
+    await createTestMeasurement(customer.id, 1, [{ fieldKey: "chest", value: 90, unit: "cm" }]);
+
+    const order = await createOrderDirect({
+      customerId: customer.id,
+      status: "DRAFT",
+      snapshotValues: [{ fieldKey: "chest", value: 90, unit: "cm" }]
+    });
+
+    // Customer records Version 2: chest: 96, waist: 82
+    await createTestMeasurement(customer.id, 2, [
+      { fieldKey: "chest", value: 96, unit: "cm" },
+      { fieldKey: "waist", value: 82, unit: "cm" }
+    ]);
+
+    // Resnapshot the order
+    const res = await fetch(`${baseUrl}/api/orders/${order.id}/resnapshot`, {
+      method: "POST"
+    });
+    assert.equal(res.status, 200);
+
+    const json = await res.json();
+    const data = json.data;
+
+    // Current snapshot in response should have 2 values (chest: 96, waist: 82)
+    assert.ok(data.measurementSnapshot);
+    assert.equal(data.measurementSnapshot.values.length, 2);
+    const chestVal = data.measurementSnapshot.values.find((v: { fieldKey: string }) => v.fieldKey === "chest");
+    assert.equal(Number(chestVal.value), 96);
+
+    // Verify DB: previous snapshot is superseded
+    const allSnapshots = await prisma.orderMeasurementSnapshot.findMany({
+      where: { orderId: order.id },
+      orderBy: { createdAt: "asc" }
+    });
+    assert.equal(allSnapshots.length, 2);
+    assert.ok(allSnapshots[0].supersededByResnapshotAt !== null);
+    assert.equal(allSnapshots[1].supersededByResnapshotAt, null);
+
+    // Audit log verifies before/after
+    const logs = getAuditLogs();
+    const resnapLog = logs.find((l) => l.entityId === order.id && l.action === "resnapshot");
+    assert.ok(resnapLog);
+    assert.ok((resnapLog.before as { snapshotId: string })?.snapshotId === allSnapshots[0].id);
+    assert.ok((resnapLog.after as { snapshotId: string })?.snapshotId === allSnapshots[1].id);
+  });
+
+  await t.test("POST /api/orders/:id/resnapshot rejects if order status is at or beyond FITTING (409)", async () => {
+    const customer = await createTestCustomer("__fitting_cust__");
+    await createTestMeasurement(customer.id, 1, [{ fieldKey: "chest", value: 90, unit: "cm" }]);
+
+    const order = await createOrderDirect({
+      customerId: customer.id,
+      status: "FITTING",
+      snapshotValues: [{ fieldKey: "chest", value: 90, unit: "cm" }]
+    });
+
+    const res = await fetch(`${baseUrl}/api/orders/${order.id}/resnapshot`, {
+      method: "POST"
+    });
+
+    assert.equal(res.status, 409);
+    const json = await res.json();
+    assert.equal(json.error.code, "BUSINESS_RULE_VIOLATION");
+  });
+});
+

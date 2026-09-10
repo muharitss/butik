@@ -14,15 +14,19 @@ import {
   round,
   isNegative
 } from "../../shared/money/index.js";
+import { parsePagination, buildPaginationMeta } from "../../shared/http/index.js";
 import { recordAudit } from "../audit/index.js";
 import { getCurrentMeasurementVersion } from "../measurements/index.js";
 import type {
   CreateOrderInput,
-  OrderItemInput
+  OrderItemInput,
+  ListOrdersQueryParams,
+  UpdateOrderInput
 } from "./orders.schemas.js";
 import {
   type OrderStatus,
-  validateTransition
+  validateTransition,
+  PRE_FITTING_STATUSES
 } from "./orders.rules.js";
 
 export interface ComputedItem {
@@ -475,4 +479,347 @@ export async function transitionOrder(
     return execute(clientTx);
   }
   return prisma.$transaction(execute);
+}
+
+/**
+ * Lists and filters orders with pagination.
+ * Supports filtering by q (orderNumber, customer name, phone), status, dueBefore, and dueAfter.
+ */
+export async function listOrders(query: Partial<ListOrdersQueryParams> = {}) {
+  const { page, pageSize, skip, take } = parsePagination(query);
+  const where: Prisma.OrderWhereInput = {};
+
+  if (query.status) {
+    where.status = query.status;
+  }
+
+  if (query.dueBefore || query.dueAfter) {
+    where.deadlineAt = {};
+    if (query.dueBefore) {
+      where.deadlineAt.lte = query.dueBefore;
+    }
+    if (query.dueAfter) {
+      where.deadlineAt.gte = query.dueAfter;
+    }
+  }
+
+  if (query.q) {
+    const trimmedQ = query.q.trim();
+    const digits = trimmedQ.replace(/\D/g, "");
+
+    const orConditions: Prisma.OrderWhereInput[] = [
+      { orderNumber: { contains: trimmedQ, mode: "insensitive" } },
+      { customer: { name: { contains: trimmedQ, mode: "insensitive" } } },
+      { customer: { phone: { contains: trimmedQ, mode: "insensitive" } } }
+    ];
+
+    if (digits.length >= 3) {
+      orConditions.push({ customer: { phone: { contains: digits } } });
+      if (digits.startsWith("0")) {
+        orConditions.push({ customer: { phone: { contains: digits.slice(1) } } });
+      } else if (digits.startsWith("62")) {
+        orConditions.push({ customer: { phone: { contains: digits.slice(2) } } });
+      }
+    }
+
+    where.OR = orConditions;
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { createdAt: "desc" },
+      include: {
+        customer: true,
+        items: {
+          include: { garmentType: true }
+        }
+      }
+    }),
+    prisma.order.count({ where })
+  ]);
+
+  return {
+    items,
+    meta: buildPaginationMeta(total, page, pageSize)
+  };
+}
+
+/**
+ * Retrieves full detail for an order.
+ * Assembles order + items + current (non-superseded) snapshot with values +
+ * payments summary + status history + future sub-resource arrays (fittings, revisions, attachments).
+ */
+export async function getOrderById(
+  orderId: string,
+  clientTx?: Prisma.TransactionClient
+) {
+  const db = clientTx ?? prisma;
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      customer: true,
+      items: {
+        include: { garmentType: true }
+      },
+      measurementSnapshots: {
+        where: { supersededByResnapshotAt: null },
+        include: { values: true },
+        orderBy: { createdAt: "desc" },
+        take: 1
+      },
+      statusHistories: {
+        orderBy: { changedAt: "asc" },
+        include: { user: true }
+      }
+    }
+  });
+
+  if (!order) {
+    throw new NotFoundError("Order not found");
+  }
+
+  const activeSnapshot = order.measurementSnapshots[0] ?? null;
+  const remainingBalance = round(
+    subtract(toMoney(order.total), toMoney(order.paidTotalCache))
+  );
+
+  const paymentsSummary = {
+    paidTotal: order.paidTotalCache,
+    remainingBalance,
+    paymentStatus: order.paymentStatusCache,
+    paid_total: order.paidTotalCache,
+    remaining_balance: remainingBalance,
+    payment_status: order.paymentStatusCache
+  };
+
+  return {
+    ...order,
+    measurementSnapshot: activeSnapshot,
+    paymentsSummary,
+    payments: [],
+    fittings: [],
+    revisions: [],
+    attachments: []
+  };
+}
+
+/**
+ * Updates mutable fields of an order (deadlineAt, notes, pricing adjustments).
+ * Only permitted when order is in DRAFT or CONFIRMED status.
+ * Recomputes totals when pricing adjustments change.
+ */
+export async function updateOrder(
+  orderId: string,
+  input: UpdateOrderInput,
+  actorId?: string | null
+) {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId }
+    });
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    if (order.status !== "DRAFT" && order.status !== "CONFIRMED") {
+      throw new BusinessRuleViolationError(
+        `Order can only be modified when in DRAFT or CONFIRMED status (current: ${order.status})`
+      );
+    }
+
+    const additionalCost =
+      input.additionalCost !== undefined
+        ? round(toMoney(input.additionalCost))
+        : round(toMoney(order.additionalCost));
+    const expressFee =
+      input.expressFee !== undefined
+        ? round(toMoney(input.expressFee))
+        : round(toMoney(order.expressFee));
+    const discount =
+      input.discount !== undefined
+        ? round(toMoney(input.discount))
+        : round(toMoney(order.discount));
+
+    const subtotal = round(toMoney(order.subtotal));
+    const total = round(
+      subtract(add(add(subtotal, additionalCost), expressFee), discount)
+    );
+
+    if (isNegative(total)) {
+      throw new ValidationError("Order total cannot be negative after discount");
+    }
+
+    const updateData: Prisma.OrderUpdateInput = {
+      total,
+      additionalCost,
+      expressFee,
+      discount
+    };
+
+    if (input.deadlineAt !== undefined) {
+      updateData.deadlineAt = input.deadlineAt;
+    }
+    if (input.requiresFitting !== undefined) {
+      updateData.requiresFitting = input.requiresFitting;
+    }
+    if (input.notes !== undefined) {
+      updateData.notes = input.notes;
+    }
+
+    const updatedOrder = await tx.order.update({
+      where: { id: orderId },
+      data: updateData,
+      include: {
+        customer: true,
+        items: {
+          include: { garmentType: true }
+        },
+        measurementSnapshots: {
+          where: { supersededByResnapshotAt: null },
+          include: { values: true }
+        },
+        statusHistories: true
+      }
+    });
+
+    await recordAudit(
+      {
+        actorId: actorId ?? null,
+        entityType: "order",
+        entityId: orderId,
+        action: "update",
+        before: {
+          deadlineAt: order.deadlineAt,
+          requiresFitting: order.requiresFitting,
+          notes: order.notes,
+          subtotal: order.subtotal,
+          additionalCost: order.additionalCost,
+          expressFee: order.expressFee,
+          discount: order.discount,
+          total: order.total
+        },
+        after: {
+          deadlineAt: updatedOrder.deadlineAt,
+          requiresFitting: updatedOrder.requiresFitting,
+          notes: updatedOrder.notes,
+          subtotal: updatedOrder.subtotal,
+          additionalCost: updatedOrder.additionalCost,
+          expressFee: updatedOrder.expressFee,
+          discount: updatedOrder.discount,
+          total: updatedOrder.total
+        }
+      },
+      tx
+    );
+
+    return updatedOrder;
+  });
+}
+
+/**
+ * Resnapshots the order measurements from the customer's current measurement version.
+ * Marks the old active snapshot as superseded and audit-logs before/after values.
+ * Permitted only pre-FITTING (DRAFT, CONFIRMED, IN_PROGRESS).
+ */
+export async function resnapshotOrder(
+  orderId: string,
+  actorId?: string | null
+) {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        measurementSnapshots: {
+          where: { supersededByResnapshotAt: null },
+          include: { values: true },
+          orderBy: { createdAt: "desc" },
+          take: 1
+        }
+      }
+    });
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    if (!PRE_FITTING_STATUSES.includes(order.status as OrderStatus)) {
+      throw new BusinessRuleViolationError(
+        `Cannot resnapshot order: resnapshot is only permitted pre-FITTING (current: ${order.status})`
+      );
+    }
+
+    const currentMeasurement = await getCurrentMeasurementVersion(
+      order.customerId,
+      tx
+    );
+    if (!currentMeasurement) {
+      throw new BusinessRuleViolationError(
+        "Customer has no measurement version recorded. Please record customer measurements first."
+      );
+    }
+
+    const activeSnapshot = order.measurementSnapshots[0];
+    if (!activeSnapshot) {
+      throw new BusinessRuleViolationError(
+        "No active measurement snapshot found for order"
+      );
+    }
+
+    // Mark previous snapshot as superseded
+    const now = new Date();
+    await tx.orderMeasurementSnapshot.update({
+      where: { id: activeSnapshot.id },
+      data: { supersededByResnapshotAt: now }
+    });
+
+    // Create new snapshot
+    const newSnapshot = await tx.orderMeasurementSnapshot.create({
+      data: {
+        orderId,
+        sourceMeasurementVersionId: currentMeasurement.id,
+        values: {
+          create: currentMeasurement.values.map((v) => ({
+            fieldKey: v.fieldKey,
+            value: v.value,
+            unit: v.unit
+          }))
+        }
+      },
+      include: { values: true }
+    });
+
+    await recordAudit(
+      {
+        actorId: actorId ?? null,
+        entityType: "order",
+        entityId: orderId,
+        action: "resnapshot",
+        before: {
+          snapshotId: activeSnapshot.id,
+          sourceMeasurementVersionId: activeSnapshot.sourceMeasurementVersionId,
+          values: activeSnapshot.values.map((v) => ({
+            fieldKey: v.fieldKey,
+            value: v.value.toString(),
+            unit: v.unit
+          }))
+        },
+        after: {
+          snapshotId: newSnapshot.id,
+          sourceMeasurementVersionId: newSnapshot.sourceMeasurementVersionId,
+          values: newSnapshot.values.map((v) => ({
+            fieldKey: v.fieldKey,
+            value: v.value.toString(),
+            unit: v.unit
+          }))
+        }
+      },
+      tx
+    );
+
+    return getOrderById(orderId, tx);
+  });
 }

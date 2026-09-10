@@ -20,6 +20,7 @@ test("Customer API integration tests", async (t) => {
   });
 
   const createdCustomerIds: string[] = [];
+  const createdOrderIds: string[] = [];
 
   t.beforeEach(() => {
     clearAuditLogs();
@@ -27,6 +28,27 @@ test("Customer API integration tests", async (t) => {
 
   t.after(async () => {
     server.close();
+    if (createdOrderIds.length > 0) {
+      await prisma.orderStatusHistory.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.orderMeasurementSnapshotValue.deleteMany({
+        where: {
+          orderMeasurementSnapshot: {
+            orderId: { in: createdOrderIds }
+          }
+        }
+      });
+      await prisma.orderMeasurementSnapshot.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.order.deleteMany({
+        where: { id: { in: createdOrderIds } }
+      });
+    }
     if (createdCustomerIds.length > 0) {
       await prisma.customer.deleteMany({
         where: { id: { in: createdCustomerIds } }
@@ -214,4 +236,60 @@ test("Customer API integration tests", async (t) => {
     const listJson = await listRes.json();
     assert.ok(!listJson.data.some((c: { id: string }) => c.id === testCustomerId));
   });
+
+  await t.test("DELETE /api/customers/:id blocked (409 CONFLICT) when customer has active order, allowed once cancelled", async () => {
+    // 1. Create a customer
+    const custRes = await fetch(`${baseUrl}/api/customers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "__test_cust_with_order__", phone: "081299990001" })
+    });
+    const custJson = await custRes.json();
+    const custId = custJson.data.id;
+    createdCustomerIds.push(custId);
+
+    // 2. Create an active (DRAFT) order for this customer
+    const orderNumber = `JF-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        customerId: custId,
+        status: "DRAFT",
+        deadlineAt: new Date(Date.now() + 86400000),
+        subtotal: 100000,
+        total: 100000
+      }
+    });
+    createdOrderIds.push(order.id);
+
+    // 3. Confirm GET /api/customers/:id populates the active order
+    const detailRes = await fetch(`${baseUrl}/api/customers/${custId}`);
+    assert.equal(detailRes.status, 200);
+    const detailJson = await detailRes.json();
+    assert.equal(detailJson.data.orders.length, 1);
+    assert.equal(detailJson.data.orders[0].id, order.id);
+
+    // 4. Attempt to delete customer with active order -> 409 CONFLICT
+    const deleteRes = await fetch(`${baseUrl}/api/customers/${custId}`, {
+      method: "DELETE"
+    });
+    assert.equal(deleteRes.status, 409);
+    const deleteJson = await deleteRes.json();
+    assert.equal(deleteJson.error?.code, "CONFLICT");
+
+    // 5. Cancel the order
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { status: "CANCELLED", cancelledAt: new Date() }
+    });
+
+    // 6. Delete should now succeed
+    const deleteSuccessRes = await fetch(`${baseUrl}/api/customers/${custId}`, {
+      method: "DELETE"
+    });
+    assert.equal(deleteSuccessRes.status, 200);
+    const deleteSuccessJson = await deleteSuccessRes.json();
+    assert.equal(deleteSuccessJson.data?.deleted, true);
+  });
 });
+
