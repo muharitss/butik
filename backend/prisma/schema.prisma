@@ -8,28 +8,30 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  phone     String?
-  role      String   @default("owner")
-  isActive            Boolean              @default(true) @map("is_active")
-  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz
-  measurementVersions MeasurementVersion[]
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String
+  phone                String?
+  role                 String                 @default("owner")
+  isActive             Boolean                @default(true) @map("is_active")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  measurementVersions  MeasurementVersion[]
+  orderStatusHistories OrderStatusHistory[]
 
   @@map("users")
 }
 
 model Customer {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  phone     String?
-  email     String?
-  address   String?
-  notes     String?
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  phone               String?
+  email               String?
+  address             String?
+  notes               String?
   createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz
   updatedAt           DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt           DateTime?            @map("deleted_at") @db.Timestamptz
   measurementVersions MeasurementVersion[]
+  orders              Order[]
 
   @@index([name])
   @@index([phone])
@@ -45,6 +47,7 @@ model GarmentType {
   updatedAt         DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt         DateTime?                 @map("deleted_at") @db.Timestamptz
   measurementFields GarmentMeasurementField[]
+  orderItems        OrderItem[]
 
   @@map("garment_types")
 }
@@ -66,18 +69,19 @@ model GarmentMeasurementField {
 }
 
 model MeasurementVersion {
-  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customerId    String             @map("customer_id") @db.Uuid
-  versionNumber Int                @map("version_number")
-  label         String?
-  notes         String?
-  measuredAt    DateTime           @map("measured_at") @db.Timestamptz
-  createdBy     String?            @map("created_by") @db.Uuid
-  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  id                        String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId                String                     @map("customer_id") @db.Uuid
+  versionNumber             Int                        @map("version_number")
+  label                     String?
+  notes                     String?
+  measuredAt                DateTime                   @map("measured_at") @db.Timestamptz
+  createdBy                 String?                    @map("created_by") @db.Uuid
+  createdAt                 DateTime                   @default(now()) @map("created_at") @db.Timestamptz
 
-  customer      Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  user          User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
-  values        MeasurementValue[]
+  customer                  Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  user                      User?                      @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  values                    MeasurementValue[]
+  orderMeasurementSnapshots OrderMeasurementSnapshot[]
 
   @@unique([customerId, versionNumber])
   @@index([customerId])
@@ -96,4 +100,104 @@ model MeasurementValue {
   @@unique([measurementVersionId, fieldKey])
   @@index([measurementVersionId])
   @@map("measurement_values")
+}
+
+model OrderNumberCounter {
+  year      Int @id
+  lastValue Int @default(0) @map("last_value")
+
+  @@map("order_number_counters")
+}
+
+model Order {
+  id                   String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderNumber          String                     @unique @map("order_number")
+  customerId           String                     @map("customer_id") @db.Uuid
+  status               String                     @default("DRAFT")
+  requiresFitting      Boolean                    @default(true) @map("requires_fitting")
+  orderDate            DateTime                   @default(now()) @map("order_date") @db.Timestamptz
+  deadlineAt           DateTime                   @map("deadline_at") @db.Timestamptz
+  subtotal             Decimal                    @db.Decimal(14, 2)
+  additionalCost       Decimal                    @default(0) @map("additional_cost") @db.Decimal(14, 2)
+  expressFee           Decimal                    @default(0) @map("express_fee") @db.Decimal(14, 2)
+  discount             Decimal                    @default(0) @map("discount") @db.Decimal(14, 2)
+  total                Decimal                    @db.Decimal(14, 2)
+  paidTotalCache       Decimal                    @default(0) @map("paid_total_cache") @db.Decimal(14, 2)
+  paymentStatusCache   String                     @default("UNPAID") @map("payment_status_cache")
+  notes                String?
+  cancelledAt          DateTime?                  @map("cancelled_at") @db.Timestamptz
+  cancellationReason   String?                    @map("cancellation_reason")
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime                   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer             Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items                OrderItem[]
+  measurementSnapshots OrderMeasurementSnapshot[]
+  statusHistories      OrderStatusHistory[]
+
+  @@index([customerId])
+  @@index([deadlineAt])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String      @map("order_id") @db.Uuid
+  garmentTypeId String      @map("garment_type_id") @db.Uuid
+  quantity      Int
+  unitPrice     Decimal     @map("unit_price") @db.Decimal(14, 2)
+  subtotal      Decimal     @db.Decimal(14, 2)
+  notes         String?
+
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  garmentType   GarmentType @relation(fields: [garmentTypeId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderMeasurementSnapshot {
+  id                         String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId                    String                          @map("order_id") @db.Uuid
+  sourceMeasurementVersionId String                          @map("source_measurement_version_id") @db.Uuid
+  createdAt                  DateTime                        @default(now()) @map("created_at") @db.Timestamptz
+  supersededByResnapshotAt   DateTime?                       @map("superseded_by_resnapshot_at") @db.Timestamptz
+
+  order                      Order                           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  sourceMeasurementVersion   MeasurementVersion              @relation(fields: [sourceMeasurementVersionId], references: [id], onDelete: Restrict)
+  values                     OrderMeasurementSnapshotValue[]
+
+  @@index([orderId])
+  @@map("order_measurement_snapshots")
+}
+
+model OrderMeasurementSnapshotValue {
+  id                         String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderMeasurementSnapshotId String                   @map("order_measurement_snapshot_id") @db.Uuid
+  fieldKey                   String                   @map("field_key")
+  value                      Decimal                  @db.Decimal(6, 2)
+  unit                       String
+
+  orderMeasurementSnapshot   OrderMeasurementSnapshot @relation(fields: [orderMeasurementSnapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([orderMeasurementSnapshotId, fieldKey])
+  @@index([orderMeasurementSnapshotId])
+  @@map("order_measurement_snapshot_values")
+}
+
+model OrderStatusHistory {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId    String   @map("order_id") @db.Uuid
+  fromStatus String?  @map("from_status")
+  toStatus   String   @map("to_status")
+  changedBy  String?  @map("changed_by") @db.Uuid
+  reason     String?
+  changedAt  DateTime @default(now()) @map("changed_at") @db.Timestamptz
+
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  user       User?    @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_status_histories")
 }
