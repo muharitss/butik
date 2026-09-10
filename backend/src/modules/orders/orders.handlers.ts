@@ -2,12 +2,14 @@ import type { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "../../shared/http/index.js";
 import {
   createOrder,
-  replaceOrderItems
+  replaceOrderItems,
+  transitionOrder
 } from "./orders.service.js";
 import type {
   CreateOrderInput,
   ReplaceOrderItemsInput,
-  OrderIdParam
+  OrderIdParam,
+  TransitionOrderInput
 } from "./orders.schemas.js";
 
 /**
@@ -45,6 +47,30 @@ export async function replaceOrderItemsHandler(
     const actorId = (req.headers["x-actor-id"] as string) || null;
 
     const order = await replaceOrderItems(id, body.items, actorId);
+    sendSuccess(res, order);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/orders/:id/transition
+ * Runs the governed order status transition per the state machine.
+ */
+export async function transitionOrderHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { id } = req.params as unknown as OrderIdParam;
+    const body = req.body as TransitionOrderInput;
+    const actorId = (req.headers["x-actor-id"] as string) || null;
+
+    const order = await transitionOrder(id, body.toStatus, {
+      reason: body.reason,
+      actorId
+    });
     sendSuccess(res, order);
   } catch (err) {
     next(err);

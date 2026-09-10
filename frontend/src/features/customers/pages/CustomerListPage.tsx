@@ -4,6 +4,14 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
   Table,
   TableBody,
   TableCell,
@@ -28,12 +36,13 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  User,
   Phone,
   Mail,
+  MapPin,
   Loader2,
   X,
   AlertTriangle,
+  Users,
 } from 'lucide-react';
 import { fetchCustomers, deleteCustomer } from '../api/customers.api.ts';
 import type { Customer, PaginationMeta } from '../types/customers.types.ts';
@@ -147,15 +156,15 @@ export const CustomerListPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-heading text-2xl font-bold text-foreground">
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
               Customer Directory
-            </h2>
-            <Badge variant="secondary" className="font-sans">
-              {meta.totalItems} clients
+            </h1>
+            <Badge variant="secondary" className="font-sans font-medium text-xs">
+              {meta.totalItems} {meta.totalItems === 1 ? 'client' : 'clients'}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-1">
             Manage bespoke tailoring clients, contact records, and measurement profiles.
           </p>
         </div>
@@ -163,7 +172,7 @@ export const CustomerListPage: React.FC = () => {
         <Link
           to="/customers/new"
           id="btn-create-customer"
-          className={buttonVariants()}
+          className={buttonVariants({ size: 'default' })}
         >
           <Plus className="size-4 mr-1.5" />
           Add Customer
@@ -171,26 +180,30 @@ export const CustomerListPage: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="relative flex items-center max-w-md">
-        <Search className="absolute left-3 size-4 text-muted-foreground pointer-events-none" />
-        <Input
-          id="input-customer-search"
-          type="search"
-          placeholder="Search by name or phone number..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 pr-8"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="absolute right-2 text-muted-foreground hover:text-foreground p-1"
-            aria-label="Clear search input"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
+      <div className="flex items-center gap-3 max-w-md w-full">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          <Input
+            id="input-customer-search"
+            type="search"
+            placeholder="Search by name or phone number..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-8 text-sm"
+          />
+          {searchQuery && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search input"
+            >
+              <X className="size-3" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Error alert */}
@@ -204,92 +217,114 @@ export const CustomerListPage: React.FC = () => {
 
       {/* Customers Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground">
-          <Loader2 className="size-6 animate-spin mr-2" />
-          <span className="text-sm">Loading customers...</span>
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="size-7 animate-spin mb-2 text-primary" />
+          <span className="text-sm">Loading customer directory...</span>
         </div>
       ) : customers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-14 px-4 text-center">
-          <div className="rounded-full bg-muted p-3 mb-3">
-            <User className="size-6 text-muted-foreground" />
-          </div>
-          <h3 className="font-medium text-foreground">
-            {debouncedQuery ? 'No customers found' : 'No customers yet'}
-          </h3>
-          <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
-            {debouncedQuery
-              ? `No client matched "${debouncedQuery}". Try another search term or create a new client record.`
-              : 'Add your first customer to start tracking measurements and tailoring orders.'}
-          </p>
-          {debouncedQuery ? (
-            <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
-              Clear Search Filter
-            </Button>
-          ) : (
-            <Link
-              to="/customers/new"
-              className={buttonVariants({ size: 'sm' })}
-            >
-              <Plus className="size-4 mr-1.5" />
-              Add Customer
-            </Link>
-          )}
-        </div>
+        <Card className="border-dashed bg-card/50">
+          <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="rounded-full bg-muted p-3 mb-3 text-muted-foreground">
+              <Users className="size-6" />
+            </div>
+            <h3 className="font-heading font-semibold text-lg text-foreground">
+              {debouncedQuery ? 'No customers found' : 'No customers yet'}
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
+              {debouncedQuery
+                ? `No client matched "${debouncedQuery}". Try another search term or create a new client record.`
+                : 'Add your first customer to start tracking bespoke measurements and tailoring orders.'}
+            </p>
+            {debouncedQuery ? (
+              <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
+                Clear Search Filter
+              </Button>
+            ) : (
+              <Link
+                to="/customers/new"
+                className={buttonVariants({ size: 'sm' })}
+              >
+                <Plus className="size-4 mr-1.5" />
+                Add Customer
+              </Link>
+            )}
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
-          <div className="hidden md:block rounded-md border bg-card">
+          <Card className="hidden md:block overflow-hidden border">
             <Table id="table-customers">
-              <TableHeader>
+              <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="w-[30%]">Client Name</TableHead>
-                  <TableHead className="w-[25%]">Contact</TableHead>
-                  <TableHead className="w-[25%]">Address / Notes</TableHead>
+                  <TableHead className="w-[32%]">Client Name</TableHead>
+                  <TableHead className="w-[28%]">Contact Info</TableHead>
+                  <TableHead className="w-[22%]">Address / Notes</TableHead>
                   <TableHead className="w-[10%]">Added</TableHead>
-                  <TableHead className="w-[10%] text-right">Actions</TableHead>
+                  <TableHead className="w-[8%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {customers.map((c) => (
-                  <TableRow key={c.id} className="group">
+                  <TableRow key={c.id} className="hover:bg-muted/40 transition-colors">
                     <TableCell className="font-medium">
                       <Link
                         to={`/customers/${c.id}`}
-                        className="hover:underline text-foreground flex items-center gap-2"
+                        className="group/name flex items-center gap-3 text-foreground hover:underline"
                       >
-                        <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-heading font-bold text-xs">
                           {c.name.charAt(0).toUpperCase()}
                         </span>
-                        <span>{c.name}</span>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm truncate text-foreground group-hover/name:text-primary transition-colors">
+                            {c.name}
+                          </div>
+                        </div>
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col text-xs space-y-0.5">
+                      <div className="flex flex-col text-xs space-y-1">
                         {c.phone ? (
                           <a
                             href={`tel:${c.phone}`}
-                            className="text-foreground hover:underline flex items-center gap-1"
+                            className="text-foreground hover:underline flex items-center gap-1.5 w-fit"
                           >
                             <Phone className="size-3 text-muted-foreground" />
-                            {c.phone}
+                            <span>{c.phone}</span>
                           </a>
                         ) : (
-                          <span className="text-muted-foreground italic">No phone</span>
+                          <span className="text-muted-foreground italic flex items-center gap-1.5">
+                            <Phone className="size-3 text-muted-foreground/60" />
+                            No phone
+                          </span>
                         )}
                         {c.email && (
                           <a
                             href={`mailto:${c.email}`}
-                            className="text-muted-foreground hover:underline flex items-center gap-1"
+                            className="text-muted-foreground hover:underline flex items-center gap-1.5 truncate max-w-[220px]"
                           >
-                            <Mail className="size-3" />
-                            {c.email}
+                            <Mail className="size-3 shrink-0" />
+                            <span className="truncate">{c.email}</span>
                           </a>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-xs text-muted-foreground max-w-xs truncate">
-                        {c.address || c.notes || '—'}
+                      <div className="text-xs text-muted-foreground max-w-[220px] truncate">
+                        {c.address || c.notes ? (
+                          <span className="flex items-center gap-1.5 truncate">
+                            {c.address ? (
+                              <>
+                                <MapPin className="size-3 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{c.address}</span>
+                              </>
+                            ) : (
+                              <span className="truncate">{c.notes}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/60 italic">—</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -303,6 +338,7 @@ export const CustomerListPage: React.FC = () => {
                           title="View Details"
                         >
                           <Eye className="size-3.5" />
+                          <span className="sr-only">View {c.name}</span>
                         </Link>
                         <Link
                           to={`/customers/${c.id}/edit`}
@@ -310,11 +346,12 @@ export const CustomerListPage: React.FC = () => {
                           title="Edit Customer"
                         >
                           <Pencil className="size-3.5" />
+                          <span className="sr-only">Edit {c.name}</span>
                         </Link>
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           onClick={() => {
                             setDeleteError(null);
                             setCustomerToDelete(c);
@@ -322,6 +359,7 @@ export const CustomerListPage: React.FC = () => {
                           title="Delete Customer"
                         >
                           <Trash2 className="size-3.5" />
+                          <span className="sr-only">Delete {c.name}</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -329,59 +367,71 @@ export const CustomerListPage: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </Card>
 
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
             {customers.map((c) => (
-              <div
-                key={c.id}
-                className="rounded-lg border bg-card p-4 space-y-3 text-card-foreground shadow-xs"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <Link
-                    to={`/customers/${c.id}`}
-                    className="font-medium text-foreground hover:underline flex items-center gap-2"
-                  >
-                    <span className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                      {c.name.charAt(0).toUpperCase()}
-                    </span>
-                    <div>
-                      <h4 className="font-semibold text-sm">{c.name}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Added {formatDate(c.createdAt)}
-                      </p>
-                    </div>
-                  </Link>
-                </div>
+              <Card key={c.id} className="transition-all hover:border-foreground/20">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <Link
+                      to={`/customers/${c.id}`}
+                      className="flex items-center gap-2.5 min-w-0"
+                    >
+                      <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-heading font-bold text-xs">
+                        {c.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <CardTitle className="font-heading text-sm font-semibold truncate hover:underline text-foreground">
+                          {c.name}
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                          Added {formatDate(c.createdAt)}
+                        </CardDescription>
+                      </div>
+                    </Link>
+                  </div>
+                </CardHeader>
 
-                <div className="text-xs space-y-1 text-muted-foreground border-t pt-2">
-                  {c.phone && (
-                    <div className="flex items-center gap-1.5 text-foreground">
+                <CardContent className="space-y-1.5 text-xs text-muted-foreground pt-0 pb-3">
+                  {c.phone ? (
+                    <div className="flex items-center gap-2 text-foreground">
                       <Phone className="size-3 text-muted-foreground" />
-                      <span>{c.phone}</span>
+                      <a href={`tel:${c.phone}`} className="hover:underline">
+                        {c.phone}
+                      </a>
                     </div>
-                  )}
-                  {c.email && (
-                    <div className="flex items-center gap-1.5">
-                      <Mail className="size-3" />
-                      <span>{c.email}</span>
+                  ) : null}
+                  {c.email ? (
+                    <div className="flex items-center gap-2">
+                      <Mail className="size-3 text-muted-foreground" />
+                      <a href={`mailto:${c.email}`} className="hover:underline truncate">
+                        {c.email}
+                      </a>
                     </div>
-                  )}
-                  {c.address && <p className="truncate">📍 {c.address}</p>}
-                </div>
+                  ) : null}
+                  {c.address ? (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="size-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{c.address}</span>
+                    </div>
+                  ) : null}
+                </CardContent>
 
-                <div className="flex items-center justify-end gap-2 border-t pt-2">
+                <CardFooter className="border-t pt-3 flex items-center justify-end gap-2">
                   <Link
                     to={`/customers/${c.id}`}
                     className={buttonVariants({ variant: 'outline', size: 'xs' })}
                   >
+                    <Eye className="size-3 mr-1" />
                     View
                   </Link>
                   <Link
                     to={`/customers/${c.id}/edit`}
                     className={buttonVariants({ variant: 'outline', size: 'xs' })}
                   >
+                    <Pencil className="size-3 mr-1" />
                     Edit
                   </Link>
                   <Button
@@ -392,10 +442,11 @@ export const CustomerListPage: React.FC = () => {
                       setCustomerToDelete(c);
                     }}
                   >
+                    <Trash2 className="size-3 mr-1" />
                     Delete
                   </Button>
-                </div>
-              </div>
+                </CardFooter>
+              </Card>
             ))}
           </div>
 
@@ -403,8 +454,9 @@ export const CustomerListPage: React.FC = () => {
           {meta.totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-muted-foreground">
               <span>
-                Page <strong>{meta.page}</strong> of <strong>{meta.totalPages}</strong> (
-                {meta.totalItems} total)
+                Showing page <strong className="text-foreground">{meta.page}</strong> of{' '}
+                <strong className="text-foreground">{meta.totalPages}</strong> (
+                {meta.totalItems} total {meta.totalItems === 1 ? 'client' : 'clients'})
               </span>
               <div className="flex items-center gap-2">
                 <Button

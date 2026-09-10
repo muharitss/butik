@@ -26,7 +26,22 @@ export const orderIdParamSchema = z.object({
   id: z.string().uuid("Invalid order ID format")
 });
 
+export const transitionOrderSchema = z.object({
+  toStatus: z.enum([
+    "DRAFT",
+    "CONFIRMED",
+    "IN_PROGRESS",
+    "FITTING",
+    "REVISION",
+    "READY",
+    "COMPLETED",
+    "CANCELLED"
+  ]),
+  reason: z.string().trim().nullable().optional()
+});
+
 export type OrderItemInput = z.infer<typeof orderItemInputSchema>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type ReplaceOrderItemsInput = z.infer<typeof replaceOrderItemsSchema>;
 export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
+export type TransitionOrderInput = z.infer<typeof transitionOrderSchema>;

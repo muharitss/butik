@@ -6,11 +6,13 @@ import {
 import {
   createOrderSchema,
   replaceOrderItemsSchema,
-  orderIdParamSchema
+  orderIdParamSchema,
+  transitionOrderSchema
 } from "./orders.schemas.js";
 import {
   createOrderHandler,
-  replaceOrderItemsHandler
+  replaceOrderItemsHandler,
+  transitionOrderHandler
 } from "./orders.handlers.js";
 
 const orderRouter = Router();
@@ -21,6 +23,12 @@ orderRouter.patch(
   validateParams(orderIdParamSchema),
   validateBody(replaceOrderItemsSchema),
   replaceOrderItemsHandler
+);
+orderRouter.post(
+  "/:id/transition",
+  validateParams(orderIdParamSchema),
+  validateBody(transitionOrderSchema),
+  transitionOrderHandler
 );
 
 export { orderRouter };

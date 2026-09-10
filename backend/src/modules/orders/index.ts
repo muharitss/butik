@@ -1,3 +1,4 @@
+export * from "./orders.rules.js";
 export * from "./orders.schemas.js";
 export * from "./orders.service.js";
 export * from "./orders.handlers.js";

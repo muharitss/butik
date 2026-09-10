@@ -4,6 +4,7 @@ import type { Server } from "node:http";
 import app from "../../app.js";
 import { prisma } from "../../infrastructure/prisma/client.js";
 import { getAuditLogs, clearAuditLogs } from "../audit/index.js";
+import { transitionOrder } from "./orders.service.js";
 
 test("Order Creation & Item Replacement API integration tests", async (t) => {
   let server: Server;
@@ -512,5 +513,425 @@ test("Order Creation & Item Replacement API integration tests", async (t) => {
     const json = await patchRes.json();
     assert.equal(json.error.code, "BUSINESS_RULE_VIOLATION");
     assert.match(json.error.message, /DRAFT or CONFIRMED/);
+  });
+});
+
+test("Order Status Transitions API integration tests", async (t) => {
+  let server: Server;
+  let baseUrl = "";
+
+  await new Promise<void>((resolve) => {
+    server = app.listen(0, () => {
+      const address = server.address();
+      if (address && typeof address === "object") {
+        baseUrl = `http://127.0.0.1:${address.port}`;
+      }
+      resolve();
+    });
+  });
+
+  const createdCustomerIds: string[] = [];
+  const createdGarmentTypeIds: string[] = [];
+  const createdOrderIds: string[] = [];
+
+  t.beforeEach(() => {
+    clearAuditLogs();
+  });
+
+  t.after(async () => {
+    server.close();
+
+    if (createdOrderIds.length > 0) {
+      await prisma.orderStatusHistory.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.orderMeasurementSnapshotValue.deleteMany({
+        where: {
+          orderMeasurementSnapshot: {
+            orderId: { in: createdOrderIds }
+          }
+        }
+      });
+      await prisma.orderMeasurementSnapshot.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.order.deleteMany({
+        where: { id: { in: createdOrderIds } }
+      });
+    }
+
+    if (createdCustomerIds.length > 0) {
+      await prisma.measurementValue.deleteMany({
+        where: {
+          measurementVersion: {
+            customerId: { in: createdCustomerIds }
+          }
+        }
+      });
+      await prisma.measurementVersion.deleteMany({
+        where: { customerId: { in: createdCustomerIds } }
+      });
+      await prisma.customer.deleteMany({
+        where: { id: { in: createdCustomerIds } }
+      });
+    }
+
+    if (createdGarmentTypeIds.length > 0) {
+      await prisma.garmentMeasurementField.deleteMany({
+        where: { garmentTypeId: { in: createdGarmentTypeIds } }
+      });
+      await prisma.garmentType.deleteMany({
+        where: { id: { in: createdGarmentTypeIds } }
+      });
+    }
+  });
+
+  async function createTestCustomer(namePrefix = "__test_trans_customer__") {
+    const customer = await prisma.customer.create({
+      data: {
+        name: `${namePrefix}_${Math.random().toString(36).slice(2, 8)}`,
+        phone: "081234567890"
+      }
+    });
+    createdCustomerIds.push(customer.id);
+    return customer;
+  }
+
+  async function createTestMeasurement(customerId: string) {
+    return prisma.measurementVersion.create({
+      data: {
+        customerId,
+        versionNumber: 1,
+        measuredAt: new Date(),
+        values: {
+          create: [{ fieldKey: "waist", value: 70, unit: "cm" }]
+        }
+      },
+      include: { values: true }
+    });
+  }
+
+  async function createTestGarmentType(namePrefix = "__test_trans_gt__") {
+    const garment = await prisma.garmentType.create({
+      data: {
+        name: `${namePrefix}_${Math.random().toString(36).slice(2, 8)}`,
+        isActive: true
+      }
+    });
+    createdGarmentTypeIds.push(garment.id);
+    return garment;
+  }
+
+  async function createOrderHelper(options: {
+    requiresFitting?: boolean;
+    withItems?: boolean;
+  } = {}) {
+    const customer = await createTestCustomer();
+    await createTestMeasurement(customer.id);
+    const garment = await createTestGarmentType();
+
+    const items = options.withItems === false ? [] : [
+      {
+        garmentTypeId: garment.id,
+        quantity: 1,
+        unitPrice: 200000
+      }
+    ];
+
+    const res = await fetch(`${baseUrl}/api/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerId: customer.id,
+        deadlineAt: new Date(Date.now() + 86400000 * 3).toISOString(),
+        requiresFitting: options.requiresFitting ?? true,
+        items
+      })
+    });
+
+    const json = await res.json();
+    const order = json.data;
+    createdOrderIds.push(order.id);
+    return order;
+  }
+
+  async function transitionRequest(orderId: string, toStatus: string, reason?: string | null, headers: Record<string, string> = {}) {
+    return fetch(`${baseUrl}/api/orders/${orderId}/transition`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers
+      },
+      body: JSON.stringify({ toStatus, reason })
+    });
+  }
+
+  await t.test("DRAFT -> CONFIRMED requires at least one order item", async () => {
+    const order = await createOrderHelper({ withItems: false });
+    assert.equal(order.status, "DRAFT");
+
+    const res = await transitionRequest(order.id, "CONFIRMED");
+    assert.equal(res.status, 409);
+    const json = await res.json();
+    assert.equal(json.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.match(json.error.message, /at least one item/i);
+  });
+
+  await t.test("Full standard workflow succeeds through legal transitions", async () => {
+    const order = await createOrderHelper({ requiresFitting: true, withItems: true });
+    assert.equal(order.status, "DRAFT");
+
+    // 1. DRAFT -> CONFIRMED
+    const r1 = await transitionRequest(order.id, "CONFIRMED");
+    assert.equal(r1.status, 200);
+    const o1 = (await r1.json()).data;
+    assert.equal(o1.status, "CONFIRMED");
+
+    // 2. CONFIRMED -> IN_PROGRESS
+    const r2 = await transitionRequest(order.id, "IN_PROGRESS");
+    assert.equal(r2.status, 200);
+    const o2 = (await r2.json()).data;
+    assert.equal(o2.status, "IN_PROGRESS");
+
+    // 3. IN_PROGRESS -> FITTING
+    const r3 = await transitionRequest(order.id, "FITTING");
+    assert.equal(r3.status, 200);
+    const o3 = (await r3.json()).data;
+    assert.equal(o3.status, "FITTING");
+
+    // 4. FITTING -> REVISION
+    const r4 = await transitionRequest(order.id, "REVISION");
+    assert.equal(r4.status, 200);
+    const o4 = (await r4.json()).data;
+    assert.equal(o4.status, "REVISION");
+
+    // 5. REVISION -> FITTING
+    const r5 = await transitionRequest(order.id, "FITTING");
+    assert.equal(r5.status, 200);
+    const o5 = (await r5.json()).data;
+    assert.equal(o5.status, "FITTING");
+
+    // 6. FITTING -> READY
+    const r6 = await transitionRequest(order.id, "READY");
+    assert.equal(r6.status, 200);
+    const o6 = (await r6.json()).data;
+    assert.equal(o6.status, "READY");
+
+    // 7. READY -> REVISION (reopening, requires reason)
+    const r7Fail = await transitionRequest(order.id, "REVISION");
+    assert.equal(r7Fail.status, 409);
+    assert.match((await r7Fail.json()).error.message, /Reason is required/i);
+
+    const r7 = await transitionRequest(order.id, "REVISION", "Client requested hem adjustment");
+    assert.equal(r7.status, 200);
+    const o7 = (await r7.json()).data;
+    assert.equal(o7.status, "REVISION");
+
+    // Loop back: REVISION -> FITTING -> READY
+    await transitionRequest(order.id, "FITTING");
+    await transitionRequest(order.id, "READY");
+
+    // 8. READY -> COMPLETED (guarded by balance <= 0)
+    const r8Fail = await transitionRequest(order.id, "COMPLETED");
+    assert.equal(r8Fail.status, 409);
+    const r8FailJson = await r8Fail.json();
+    assert.equal(r8FailJson.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.match(r8FailJson.error.message, /outstanding balance/i);
+
+    // Simulate payment in full
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paidTotalCache: o6.total,
+        paymentStatusCache: "PAID"
+      }
+    });
+
+    const r8 = await transitionRequest(order.id, "COMPLETED");
+    assert.equal(r8.status, 200);
+    const o8 = (await r8.json()).data;
+    assert.equal(o8.status, "COMPLETED");
+
+    // Verify order status history was appended for every transition
+    const histories = await prisma.orderStatusHistory.findMany({
+      where: { orderId: order.id },
+      orderBy: { changedAt: "asc" }
+    });
+    // Expected transitions: initial DRAFT (created) + CONFIRMED + IN_PROGRESS + FITTING + REVISION + FITTING + READY + REVISION + FITTING + READY + COMPLETED = 11 entries
+    assert.equal(histories.length, 11);
+    assert.equal(histories[0].toStatus, "DRAFT");
+    assert.equal(histories[histories.length - 1].toStatus, "COMPLETED");
+
+    // Verify audit logs
+    const auditLogs = getAuditLogs().filter((l) => l.entityId === order.id && l.action === "status_change");
+    assert.equal(auditLogs.length, 10);
+  });
+
+  await t.test("Simple order flow without fitting (requiresFitting: false)", async () => {
+    const order = await createOrderHelper({ requiresFitting: false, withItems: true });
+    await transitionRequest(order.id, "CONFIRMED");
+    await transitionRequest(order.id, "IN_PROGRESS");
+
+    // IN_PROGRESS -> READY directly allowed when requiresFitting=false
+    const res = await transitionRequest(order.id, "READY");
+    assert.equal(res.status, 200);
+    const data = (await res.json()).data;
+    assert.equal(data.status, "READY");
+  });
+
+  await t.test("IN_PROGRESS -> READY rejected when requiresFitting is true", async () => {
+    const order = await createOrderHelper({ requiresFitting: true, withItems: true });
+    await transitionRequest(order.id, "CONFIRMED");
+    await transitionRequest(order.id, "IN_PROGRESS");
+
+    const res = await transitionRequest(order.id, "READY");
+    assert.equal(res.status, 409);
+    const json = await res.json();
+    assert.equal(json.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.match(json.error.message, /order requires fitting/i);
+  });
+
+  await t.test("Cancellations require a non-empty reason and record cancellation metadata", async () => {
+    // 1. Rejection when reason is omitted
+    const o1 = await createOrderHelper();
+    const resNoReason = await transitionRequest(o1.id, "CANCELLED");
+    assert.equal(resNoReason.status, 409);
+    const errNoReason = await resNoReason.json();
+    assert.equal(errNoReason.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.match(errNoReason.error.message, /Reason is required when cancelling/i);
+
+    // 2. Cancellation from DRAFT
+    const resDraftCancel = await transitionRequest(o1.id, "CANCELLED", "Customer changed mind");
+    assert.equal(resDraftCancel.status, 200);
+    const d1 = (await resDraftCancel.json()).data;
+    assert.equal(d1.status, "CANCELLED");
+
+    const dbOrder = await prisma.order.findUnique({ where: { id: o1.id } });
+    assert.ok(dbOrder?.cancelledAt);
+    assert.equal(dbOrder?.cancellationReason, "Customer changed mind");
+
+    // 3. Cancellation from CONFIRMED
+    const o2 = await createOrderHelper();
+    await transitionRequest(o2.id, "CONFIRMED");
+    const rConfCancel = await transitionRequest(o2.id, "CANCELLED", "Fabric out of stock");
+    assert.equal(rConfCancel.status, 200);
+
+    // 4. Cancellation from IN_PROGRESS
+    const o3 = await createOrderHelper();
+    await transitionRequest(o3.id, "CONFIRMED");
+    await transitionRequest(o3.id, "IN_PROGRESS");
+    const rProgCancel = await transitionRequest(o3.id, "CANCELLED", "Customer requested cancellation during production");
+    assert.equal(rProgCancel.status, 200);
+
+    // 5. Cancellation from FITTING
+    const o4 = await createOrderHelper();
+    await transitionRequest(o4.id, "CONFIRMED");
+    await transitionRequest(o4.id, "IN_PROGRESS");
+    await transitionRequest(o4.id, "FITTING");
+    const rFitCancel = await transitionRequest(o4.id, "CANCELLED", "Customer moved out of city");
+    assert.equal(rFitCancel.status, 200);
+
+    // 6. Cancellation from REVISION
+    const o5 = await createOrderHelper();
+    await transitionRequest(o5.id, "CONFIRMED");
+    await transitionRequest(o5.id, "IN_PROGRESS");
+    await transitionRequest(o5.id, "FITTING");
+    await transitionRequest(o5.id, "REVISION");
+    const rRevCancel = await transitionRequest(o5.id, "CANCELLED", "Irreparable tailoring mismatch");
+    assert.equal(rRevCancel.status, 200);
+  });
+
+  await t.test("Rejects illegal transitions naming current and target status (409)", async () => {
+    const order = await createOrderHelper({ requiresFitting: true, withItems: true });
+
+    // DRAFT -> READY (skipping states)
+    const rSkip = await transitionRequest(order.id, "READY");
+    assert.equal(rSkip.status, 409);
+    const jsonSkip = await rSkip.json();
+    assert.equal(jsonSkip.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.equal(jsonSkip.error.message, "Cannot transition order from DRAFT to READY");
+
+    // Advance to READY
+    await transitionRequest(order.id, "CONFIRMED");
+    await transitionRequest(order.id, "IN_PROGRESS");
+    await transitionRequest(order.id, "FITTING");
+    await transitionRequest(order.id, "READY");
+
+    // READY -> CANCELLED is explicitly forbidden (must reopen to REVISION first)
+    const rReadyCancel = await transitionRequest(order.id, "CANCELLED", "Cancel directly");
+    assert.equal(rReadyCancel.status, 409);
+    const jsonReadyCancel = await rReadyCancel.json();
+    assert.equal(jsonReadyCancel.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.equal(jsonReadyCancel.error.message, "Cannot transition order from READY to CANCELLED");
+
+    // Pay and complete
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { paidTotalCache: order.total }
+    });
+    await transitionRequest(order.id, "COMPLETED");
+
+    // COMPLETED is terminal (COMPLETED -> *)
+    const rComp1 = await transitionRequest(order.id, "READY");
+    assert.equal(rComp1.status, 409);
+    assert.equal((await rComp1.json()).error.message, "Cannot transition order from COMPLETED to READY");
+
+    const rComp2 = await transitionRequest(order.id, "CANCELLED", "Try cancel completed");
+    assert.equal(rComp2.status, 409);
+    assert.equal((await rComp2.json()).error.message, "Cannot transition order from COMPLETED to CANCELLED");
+  });
+
+  await t.test("Terminal state CANCELLED rejects any further transition", async () => {
+    const order = await createOrderHelper();
+    await transitionRequest(order.id, "CANCELLED", "Cancelled immediately");
+
+    const res = await transitionRequest(order.id, "CONFIRMED");
+    assert.equal(res.status, 409);
+    const json = await res.json();
+    assert.equal(json.error.code, "BUSINESS_RULE_VIOLATION");
+    assert.equal(json.error.message, "Cannot transition order from CANCELLED to CONFIRMED");
+  });
+
+  await t.test("Returns 404 for non-existent order ID", async () => {
+    const res = await transitionRequest("00000000-0000-0000-0000-000000000000", "CONFIRMED");
+    assert.equal(res.status, 404);
+    const json = await res.json();
+    assert.equal(json.error.code, "NOT_FOUND");
+  });
+
+  await t.test("Returns 400 for invalid body schema", async () => {
+    const order = await createOrderHelper();
+    const res = await transitionRequest(order.id, "INVALID_STATUS");
+    assert.equal(res.status, 400);
+    const json = await res.json();
+    assert.equal(json.error.code, "VALIDATION_ERROR");
+  });
+
+  await t.test("Exported transitionOrder function operates transactionally and supports clientTx", async () => {
+    const order = await createOrderHelper({ withItems: true });
+
+    // Directly call transitionOrder
+    const updated = await transitionOrder(order.id, "CONFIRMED", {
+      reason: "Confirmed via service",
+      actorId: null
+    });
+    assert.equal(updated.status, "CONFIRMED");
+
+    // Call within an external transaction
+    await prisma.$transaction(async (tx) => {
+      const nextUpdated = await transitionOrder(
+        order.id,
+        "IN_PROGRESS",
+        { reason: null, actorId: null },
+        tx
+      );
+      assert.equal(nextUpdated.status, "IN_PROGRESS");
+    });
+
+    const finalOrder = await prisma.order.findUnique({ where: { id: order.id } });
+    assert.equal(finalOrder?.status, "IN_PROGRESS");
   });
 });

@@ -20,6 +20,10 @@ import type {
   CreateOrderInput,
   OrderItemInput
 } from "./orders.schemas.js";
+import {
+  type OrderStatus,
+  validateTransition
+} from "./orders.rules.js";
 
 export interface ComputedItem {
   garmentTypeId: string;
@@ -374,4 +378,101 @@ export async function replaceOrderItems(
 
     return updatedOrder;
   });
+}
+
+export interface TransitionOrderOptions {
+  reason?: string | null;
+  actorId?: string | null;
+}
+
+/**
+ * Transitions an order to a new status according to the governed state machine in STATE-MACHINES.md.
+ * Enforces the transition table and guards, updates status and cancellation metadata,
+ * records an OrderStatusHistory entry, and logs an audit record.
+ */
+export async function transitionOrder(
+  orderId: string,
+  toStatus: OrderStatus,
+  options?: TransitionOrderOptions,
+  clientTx?: Prisma.TransactionClient
+) {
+  const execute = async (tx: Prisma.TransactionClient) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: true,
+        items: true,
+        measurementSnapshots: true
+      }
+    });
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    const currentStatus = order.status as OrderStatus;
+    const reason = options?.reason?.trim() || null;
+    const actorId = options?.actorId ?? null;
+
+    validateTransition(order, toStatus, reason);
+
+    let validChangedBy: string | null = null;
+    if (actorId) {
+      const user = await tx.user.findUnique({ where: { id: actorId } });
+      if (user) {
+        validChangedBy = user.id;
+      }
+    }
+
+    const updateData: Prisma.OrderUpdateInput = {
+      status: toStatus,
+      statusHistories: {
+        create: {
+          fromStatus: currentStatus,
+          toStatus,
+          changedBy: validChangedBy,
+          reason
+        }
+      }
+    };
+
+    if (toStatus === "CANCELLED") {
+      updateData.cancelledAt = new Date();
+      updateData.cancellationReason = reason;
+    }
+
+    const updatedOrder = await tx.order.update({
+      where: { id: orderId },
+      data: updateData,
+      include: {
+        customer: true,
+        items: {
+          include: { garmentType: true }
+        },
+        measurementSnapshots: {
+          include: { values: true }
+        },
+        statusHistories: true
+      }
+    });
+
+    await recordAudit(
+      {
+        actorId,
+        entityType: "order",
+        entityId: orderId,
+        action: "status_change",
+        before: { status: currentStatus },
+        after: { status: toStatus }
+      },
+      tx
+    );
+
+    return updatedOrder;
+  };
+
+  if (clientTx) {
+    return execute(clientTx);
+  }
+  return prisma.$transaction(execute);
 }
