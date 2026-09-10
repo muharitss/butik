@@ -17,6 +17,7 @@ export interface PaginationMeta {
   page: number;
   pageSize: number;
   total: number;
+  [key: string]: unknown;
 }
 
 export const paginationSchema = z.object({

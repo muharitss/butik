@@ -6,6 +6,8 @@ import { errorHandler } from "./shared/errors/index.js";
 import { validate } from "./shared/validation/index.js";
 import { toMoney, add, formatMoney } from "./shared/money/index.js";
 
+import { customerRouter } from "./modules/customers/index.js";
+
 const app = express();
 
 app.use(cors());
@@ -30,6 +32,8 @@ app.post("/api/test/validation", validate({ body: testCalculationSchema }), (req
     total: formatMoney(total)
   });
 });
+
+app.use("/api/customers", customerRouter);
 
 app.use(errorHandler);
 
