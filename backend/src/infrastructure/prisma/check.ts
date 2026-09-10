@@ -36,6 +36,80 @@ async function check() {
     where: { id: testCustomer.id },
   });
   console.log("Customer model check passed. Successfully created, fetched, and deleted test customer.");
+
+  // GarmentType & GarmentMeasurementField round-trip verification
+  const testGarment = await prisma.garmentType.create({
+    data: {
+      name: "Sanity Check Kemeja",
+      description: "Test garment type for db:check",
+      measurementFields: {
+        create: [
+          {
+            fieldKey: "chest",
+            label: "Lingkar Dada",
+            unit: "cm",
+            isRequired: true,
+            sortOrder: 1,
+          },
+          {
+            fieldKey: "waist",
+            label: "Lingkar Pinggang",
+            unit: "cm",
+            isRequired: false,
+            sortOrder: 2,
+          },
+        ],
+      },
+    },
+    include: {
+      measurementFields: true,
+    },
+  });
+
+  assert(typeof testGarment.id === "string" && testGarment.id.length > 0, "Expected valid garment UUID");
+  assert(testGarment.name === "Sanity Check Kemeja", "Expected garment name to match");
+  assert(testGarment.isActive === true, "Expected isActive to default to true");
+  assert(testGarment.deletedAt === null, "Expected deletedAt to be null by default");
+  assert(testGarment.createdAt instanceof Date, "Expected createdAt to be Date");
+  assert(testGarment.updatedAt instanceof Date, "Expected updatedAt to be Date");
+  assert(testGarment.measurementFields.length === 2, "Expected 2 nested measurement fields created");
+
+  // Verify unique garment name constraint
+  let duplicateNameRejected = false;
+  try {
+    await prisma.garmentType.create({
+      data: { name: "Sanity Check Kemeja" },
+    });
+  } catch {
+    duplicateNameRejected = true;
+  }
+  assert(duplicateNameRejected, "Expected duplicate garment name to be rejected");
+
+  // Verify unique (garment_type_id, field_key) constraint
+  let duplicateFieldRejected = false;
+  try {
+    await prisma.garmentMeasurementField.create({
+      data: {
+        garmentTypeId: testGarment.id,
+        fieldKey: "chest",
+        label: "Duplicate Chest",
+        unit: "cm",
+      },
+    });
+  } catch {
+    duplicateFieldRejected = true;
+  }
+  assert(duplicateFieldRejected, "Expected duplicate (garmentTypeId, fieldKey) to be rejected");
+
+  // Verify cascade delete: deleting garment type automatically deletes its fields
+  await prisma.garmentType.delete({
+    where: { id: testGarment.id },
+  });
+  const remainingFields = await prisma.garmentMeasurementField.count({
+    where: { garmentTypeId: testGarment.id },
+  });
+  assert(remainingFields === 0, "Expected cascade deletion of garment measurement fields");
+  console.log("GarmentType & GarmentMeasurementField check passed. Successfully verified constraints and cascade delete.");
 }
 
 check()

@@ -33,3 +33,32 @@ model Customer {
   @@index([phone])
   @@map("customers")
 }
+
+model GarmentType {
+  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String                    @unique
+  description       String?
+  isActive          Boolean                   @default(true) @map("is_active")
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime?                 @map("deleted_at") @db.Timestamptz
+  measurementFields GarmentMeasurementField[]
+
+  @@map("garment_types")
+}
+
+model GarmentMeasurementField {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  garmentTypeId String      @map("garment_type_id") @db.Uuid
+  fieldKey      String      @map("field_key")
+  label         String
+  unit          String
+  isRequired    Boolean     @default(true) @map("is_required")
+  sortOrder     Int         @default(0) @map("sort_order")
+
+  garmentType   GarmentType @relation(fields: [garmentTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([garmentTypeId, fieldKey])
+  @@index([garmentTypeId])
+  @@map("garment_measurement_fields")
+}
