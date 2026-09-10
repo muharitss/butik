@@ -12,8 +12,9 @@ model User {
   name      String
   phone     String?
   role      String   @default("owner")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  measurementVersions MeasurementVersion[]
 
   @@map("users")
 }
@@ -25,9 +26,10 @@ model Customer {
   email     String?
   address   String?
   notes     String?
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt           DateTime?            @map("deleted_at") @db.Timestamptz
+  measurementVersions MeasurementVersion[]
 
   @@index([name])
   @@index([phone])
@@ -61,4 +63,37 @@ model GarmentMeasurementField {
   @@unique([garmentTypeId, fieldKey])
   @@index([garmentTypeId])
   @@map("garment_measurement_fields")
+}
+
+model MeasurementVersion {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId    String             @map("customer_id") @db.Uuid
+  versionNumber Int                @map("version_number")
+  label         String?
+  notes         String?
+  measuredAt    DateTime           @map("measured_at") @db.Timestamptz
+  createdBy     String?            @map("created_by") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz
+
+  customer      Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  user          User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  values        MeasurementValue[]
+
+  @@unique([customerId, versionNumber])
+  @@index([customerId])
+  @@map("measurement_versions")
+}
+
+model MeasurementValue {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  measurementVersionId String             @map("measurement_version_id") @db.Uuid
+  fieldKey             String             @map("field_key")
+  value                Decimal            @db.Decimal(6, 2)
+  unit                 String
+
+  measurementVersion   MeasurementVersion @relation(fields: [measurementVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([measurementVersionId, fieldKey])
+  @@index([measurementVersionId])
+  @@map("measurement_values")
 }

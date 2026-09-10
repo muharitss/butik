@@ -110,6 +110,99 @@ async function check() {
   });
   assert(remainingFields === 0, "Expected cascade deletion of garment measurement fields");
   console.log("GarmentType & GarmentMeasurementField check passed. Successfully verified constraints and cascade delete.");
+
+  // MeasurementVersion & MeasurementValue round-trip verification
+  const measurementCustomer = await prisma.customer.create({
+    data: {
+      name: "Measurement Test Customer",
+      phone: "081299998888",
+    },
+  });
+
+  const testVersion = await prisma.measurementVersion.create({
+    data: {
+      customerId: measurementCustomer.id,
+      versionNumber: 1,
+      label: "Initial Fit",
+      notes: "Measured after lunch",
+      measuredAt: new Date("2026-09-10T12:00:00Z"),
+      createdBy: operator.id,
+      values: {
+        create: [
+          {
+            fieldKey: "chest",
+            value: "96.50",
+            unit: "cm",
+          },
+          {
+            fieldKey: "waist",
+            value: "82.00",
+            unit: "cm",
+          },
+        ],
+      },
+    },
+    include: {
+      values: true,
+    },
+  });
+
+  assert(typeof testVersion.id === "string" && testVersion.id.length > 0, "Expected valid version UUID");
+  assert(testVersion.customerId === measurementCustomer.id, "Expected customerId to match");
+  assert(testVersion.versionNumber === 1, "Expected versionNumber to be 1");
+  assert(testVersion.label === "Initial Fit", "Expected label to match");
+  assert(testVersion.notes === "Measured after lunch", "Expected notes to match");
+  assert(testVersion.measuredAt instanceof Date, "Expected measuredAt to be Date");
+  assert(testVersion.createdAt instanceof Date, "Expected createdAt to be Date");
+  assert(testVersion.createdBy === operator.id, "Expected createdBy to match operator id");
+  assert(testVersion.values.length === 2, "Expected 2 nested measurement values created");
+  assert(Number(testVersion.values[0].value) === 96.5, "Expected numeric value to match 96.50");
+  assert(testVersion.values[0].unit === "cm", "Expected unit to be cm");
+
+  // Verify unique (customerId, versionNumber) constraint
+  let duplicateVersionRejected = false;
+  try {
+    await prisma.measurementVersion.create({
+      data: {
+        customerId: measurementCustomer.id,
+        versionNumber: 1,
+        measuredAt: new Date(),
+      },
+    });
+  } catch {
+    duplicateVersionRejected = true;
+  }
+  assert(duplicateVersionRejected, "Expected duplicate (customerId, versionNumber) to be rejected");
+
+  // Verify unique (measurementVersionId, fieldKey) constraint
+  let duplicateValueKeyRejected = false;
+  try {
+    await prisma.measurementValue.create({
+      data: {
+        measurementVersionId: testVersion.id,
+        fieldKey: "chest",
+        value: "97.00",
+        unit: "cm",
+      },
+    });
+  } catch {
+    duplicateValueKeyRejected = true;
+  }
+  assert(duplicateValueKeyRejected, "Expected duplicate (measurementVersionId, fieldKey) to be rejected");
+
+  // Verify cascade delete: deleting measurement version cascades to measurement values
+  await prisma.measurementVersion.delete({
+    where: { id: testVersion.id },
+  });
+  const remainingValues = await prisma.measurementValue.count({
+    where: { measurementVersionId: testVersion.id },
+  });
+  assert(remainingValues === 0, "Expected cascade deletion of measurement values");
+
+  await prisma.customer.delete({
+    where: { id: measurementCustomer.id },
+  });
+  console.log("MeasurementVersion & MeasurementValue check passed. Successfully verified constraints and cascade delete.");
 }
 
 check()
