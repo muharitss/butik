@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { fetchCustomer, deleteCustomer } from '../api/customers.api.ts';
 import { OrderHistorySection } from '../components/OrderHistorySection.tsx';
+import { CustomerMeasurementsSection } from '../../measurements/index.ts';
 import type { Customer } from '../types/customers.types.ts';
 
 export const CustomerDetailPage: React.FC = () => {
@@ -259,6 +260,12 @@ export const CustomerDetailPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Customer Body Measurements (Current Summary + History + New Entry) */}
+      <CustomerMeasurementsSection
+        customerId={customer.id}
+        customerName={customer.name}
+      />
 
       {/* Reserved Order History Placeholder Section */}
       <OrderHistorySection customerId={customer.id} />
