@@ -8,13 +8,15 @@
     "start": "node dist/server.js",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,json}\"",
-    "db:check": "tsx src/infrastructure/prisma/check.ts"
+    "db:check": "tsx src/infrastructure/prisma/check.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
