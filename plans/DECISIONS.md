@@ -67,7 +67,7 @@ Each entry: **Decision**, **Context**, **Alternatives Considered**, **Consequenc
 ## D-011: UUID Primary Keys Everywhere
 **Decision:** All tables use UUID primary keys (`@default(uuid())` / `gen_random_uuid()`), including append-only logs.
 **Context:** Consistency and to avoid ever leaking sequential IDs (e.g., customer counts) in a customer-facing context (receipts, WhatsApp links).
-**Consequences:** `order_number` is a separate, human-facing, sequential/formatted field (`JF-2026-001`), not the primary key — see `BUSINESS-RULES.md#order-number-generation`.
+**Consequences:** `order_number` is a separate, human-facing, sequential/formatted field (`JF-2026-001`), not the primary key — see `BUSINESS-RULES.md#order-number-generation`. In Prisma schemas, UUID PKs are configured via `@default(dbgenerated("gen_random_uuid()")) @db.Uuid` ensuring PostgreSQL handles generation natively with default column expressions in DDL.
 
 ## D-012: No Global Frontend State Library for MVP
 **Decision:** No Redux/Zustand/etc. introduced by default; server state fetched per-feature, local UI state via React hooks.
