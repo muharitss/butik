@@ -9,6 +9,7 @@ import {
   CustomerCreatePage,
   CustomerEditPage,
 } from '../features/customers/index.ts';
+import { GarmentListPage } from '../features/garments/index.ts';
 
 export const router = createBrowserRouter([
   {
@@ -48,14 +49,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'garments',
-        element: (
-          <PlaceholderPage
-            title="Garment Types & Measurement Templates"
-            icon="✂️"
-            phase="Phase 2 (TASK-009 – TASK-013)"
-            description="Configure garment models (Kebaya, Jas, Kemeja, etc.) and their custom measurement field specifications."
-          />
-        ),
+        element: <GarmentListPage />,
       },
       {
         path: 'calendar',
