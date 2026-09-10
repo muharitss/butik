@@ -6,6 +6,7 @@ import {
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
+  rawEnvelope?: boolean;
 }
 
 export function createApiClient(customBaseUrl?: string) {
@@ -83,6 +84,11 @@ export function createApiClient(customBaseUrl?: string) {
       throw new ApiClientError('HTTP_ERROR', message, response.status);
     }
 
+    // Return full envelope if rawEnvelope is true
+    if (options.rawEnvelope) {
+      return payload as T;
+    }
+
     // Unwrap envelope: { data: T, meta?: ... }
     if (payload && typeof payload === 'object' && 'data' in payload) {
       return (payload as ApiResponse<T>).data;
@@ -97,8 +103,14 @@ export function createApiClient(customBaseUrl?: string) {
     get<T>(endpoint: string, options?: Omit<RequestOptions, 'body'>): Promise<T> {
       return request<T>(endpoint, { ...options, method: 'GET' });
     },
+    getEnvelope<T>(endpoint: string, options?: Omit<RequestOptions, 'body'>): Promise<ApiResponse<T>> {
+      return request<ApiResponse<T>>(endpoint, { ...options, method: 'GET', rawEnvelope: true });
+    },
     post<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'body'>): Promise<T> {
       return request<T>(endpoint, { ...options, method: 'POST', body });
+    },
+    postEnvelope<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'body'>): Promise<ApiResponse<T>> {
+      return request<ApiResponse<T>>(endpoint, { ...options, method: 'POST', body, rawEnvelope: true });
     },
     patch<T>(endpoint: string, body?: unknown, options?: Omit<RequestOptions, 'body'>): Promise<T> {
       return request<T>(endpoint, { ...options, method: 'PATCH', body });

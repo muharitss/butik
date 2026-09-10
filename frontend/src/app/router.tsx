@@ -3,6 +3,13 @@ import { AppShell } from './AppShell.tsx';
 import { DashboardPage } from './pages/DashboardPage.tsx';
 import { PlaceholderPage } from './pages/PlaceholderPage.tsx';
 
+import {
+  CustomerListPage,
+  CustomerDetailPage,
+  CustomerCreatePage,
+  CustomerEditPage,
+} from '../features/customers/index.ts';
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -25,14 +32,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'customers',
-        element: (
-          <PlaceholderPage
-            title="Customer Directory"
-            icon="👥"
-            phase="Phase 1 (TASK-006 – TASK-008)"
-            description="Client directory, contact details, measurement versions, and bespoke history."
-          />
-        ),
+        element: <CustomerListPage />,
+      },
+      {
+        path: 'customers/new',
+        element: <CustomerCreatePage />,
+      },
+      {
+        path: 'customers/:id',
+        element: <CustomerDetailPage />,
+      },
+      {
+        path: 'customers/:id/edit',
+        element: <CustomerEditPage />,
       },
       {
         path: 'garments',

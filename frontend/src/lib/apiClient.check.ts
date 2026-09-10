@@ -36,6 +36,43 @@ async function runSelfChecks() {
     });
     assert.equal(postResult.id, 'cust-1', 'Should return created resource data');
 
+    // 2b. Envelope tests: preserves meta
+    globalThis.fetch = async () => {
+      return new Response(
+        JSON.stringify({
+          data: [{ id: 'cust-1' }],
+          meta: { page: 1, totalPages: 5 },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    };
+
+    const envelopeGet = await client.getEnvelope<{ id: string }[]>('/customers');
+    assert.deepEqual(envelopeGet.data, [{ id: 'cust-1' }]);
+    assert.deepEqual(envelopeGet.meta, { page: 1, totalPages: 5 });
+
+    globalThis.fetch = async () => {
+      return new Response(
+        JSON.stringify({
+          data: { id: 'cust-2', name: 'John' },
+          meta: { possibleDuplicate: { id: 'cust-1', name: 'John Doe' } },
+        }),
+        {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    };
+
+    const envelopePost = await client.postEnvelope<{ id: string; name: string }>('/customers', {
+      name: 'John',
+    });
+    assert.equal(envelopePost.data.id, 'cust-2');
+    assert.deepEqual(envelopePost.meta?.possibleDuplicate, { id: 'cust-1', name: 'John Doe' });
+
     // 3. Error response test: throws ApiClientError with code and message
     globalThis.fetch = async () => {
       return new Response(

@@ -77,7 +77,7 @@ Do not introduce `repository` abstractions over Prisma — Prisma's client alrea
 ### 3.3 Module Boundaries
 
 - A module may read another module's Prisma models directly (this is a monolith with one schema — that's acceptable), but **must not** duplicate another module's business rules. E.g., `payments` computes "does this payment exceed the remaining balance" using order totals fetched via the `orders` module's exposed calculation function, not by re-deriving the formula independently.
-- Cross-module orchestration (e.g., "creating an order also creates a measurement snapshot") lives in the module that owns the *triggering* action (`orders`), which calls an explicit exported function from the owned module (`measurements`), never by reaching into the other module's Prisma models to replicate its logic.
+- Cross-module orchestration (e.g., "creating an order also creates a measurement snapshot") lives in the module that owns the _triggering_ action (`orders`), which calls an explicit exported function from the owned module (`measurements`), never by reaching into the other module's Prisma models to replicate its logic.
 - `audit` is a cross-cutting module: other modules call a shared `recordAudit(...)` function after a successful mutation. Audit logging is not implemented as request middleware auto-inspecting responses, because before/after payloads need domain-specific shaping.
 
 ### 3.4 Transactions
