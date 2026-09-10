@@ -8,6 +8,7 @@ import { toMoney, add, formatMoney } from "./shared/money/index.js";
 
 import { customerRouter } from "./modules/customers/index.js";
 import { garmentRouter } from "./modules/garments/index.js";
+import { measurementRouter } from "./modules/measurements/index.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.post("/api/test/validation", validate({ body: testCalculationSchema }), (req
   });
 });
 
+app.use("/api/customers/:customerId/measurements", measurementRouter);
 app.use("/api/customers", customerRouter);
 app.use("/api/garment-types", garmentRouter);
 
