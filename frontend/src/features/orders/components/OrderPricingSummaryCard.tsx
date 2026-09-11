@@ -27,7 +27,10 @@ export const OrderPricingSummaryCard: React.FC<OrderPricingSummaryCardProps> = (
   const discount = Number(order.discount);
   const total = Number(order.total);
   const paidTotal = Number(order.paidTotalCache || 0);
-  const remainingBalance = Math.max(0, total - paidTotal);
+  const remainingBalance =
+    order.paymentsSummary?.remainingBalance !== undefined
+      ? Number(order.paymentsSummary.remainingBalance)
+      : Math.max(0, total - paidTotal);
 
   const paymentStatus = order.paymentStatusCache || 'UNPAID';
 

@@ -1,32 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, RefreshCw, Paperclip, CreditCard } from 'lucide-react';
+import { Ruler, RefreshCw, Paperclip } from 'lucide-react';
 
 export const OrderPlaceholdersSection: React.FC = () => {
   return (
     <div className="space-y-4" id="order-future-placeholders">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Payment Ledger Placeholder */}
-        <Card className="border-dashed bg-card/60">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CreditCard className="size-4 text-muted-foreground" />
-                <CardTitle className="text-sm font-semibold">Payment Transactions</CardTitle>
-              </div>
-              <Badge variant="outline" className="text-[10px]">Phase 4 Reserved</Badge>
-            </div>
-            <CardDescription className="text-xs">
-              Down payments, bank transfers, cash settlements, and balance ledger.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground italic">
-              Interactive ledger actions and receipt printing will be active in Phase 4 (TASK-018 – TASK-019).
-            </p>
-          </CardContent>
-        </Card>
 
         {/* Fittings Placeholder */}
         <Card className="border-dashed bg-card/60">

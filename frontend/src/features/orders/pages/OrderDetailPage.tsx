@@ -20,6 +20,7 @@ import { OrderPricingSummaryCard } from '../components/OrderPricingSummaryCard.t
 import { OrderSnapshotSection } from '../components/OrderSnapshotSection.tsx';
 import { OrderHistoryTimeline } from '../components/OrderHistoryTimeline.tsx';
 import { OrderPlaceholdersSection } from '../components/OrderPlaceholdersSection.tsx';
+import { OrderPaymentsSection } from '../../payments/components/OrderPaymentsSection.tsx';
 import { OrderEditMetadataDialog } from '../components/OrderEditMetadataDialog.tsx';
 import { OrderEditItemsDialog } from '../components/OrderEditItemsDialog.tsx';
 
@@ -146,6 +147,12 @@ export const OrderDetailPage: React.FC = () => {
           <OrderSnapshotSection
             order={order}
             onResnapshotSuccess={(updated) => setOrder(updated)}
+          />
+
+          {/* Payment Transactions Section */}
+          <OrderPaymentsSection
+            order={order}
+            onOrderUpdated={(updated) => setOrder(updated)}
           />
 
           {/* Reserved Future Section Placeholders */}

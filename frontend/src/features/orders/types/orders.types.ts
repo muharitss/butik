@@ -1,5 +1,6 @@
 import type { Customer, PaginationMeta } from '../../customers/types/customers.types.ts';
 import type { GarmentType } from '../../garments/types/garments.types.ts';
+import type { Payment } from '../../payments/types/payments.types.ts';
 
 export type OrderStatus =
   | 'DRAFT'
@@ -96,7 +97,7 @@ export interface Order {
   measurementSnapshot?: OrderMeasurementSnapshot | null;
   statusHistories?: OrderStatusHistory[];
   paymentsSummary?: PaymentsSummary;
-  payments?: unknown[];
+  payments?: Payment[];
   fittings?: unknown[];
   revisions?: unknown[];
   attachments?: unknown[];
