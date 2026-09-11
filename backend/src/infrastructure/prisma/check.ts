@@ -205,18 +205,19 @@ async function check() {
   console.log("MeasurementVersion & MeasurementValue check passed. Successfully verified constraints and cascade delete.");
 
   // Order, OrderItem, OrderNumberCounter, OrderMeasurementSnapshot, OrderMeasurementSnapshotValue, OrderStatusHistory verification
-  // 1. OrderNumberCounter
+  const checkYear = 9999;
+  await prisma.orderNumberCounter.deleteMany({ where: { year: checkYear } });
   const counter = await prisma.orderNumberCounter.create({
     data: {
-      year: 2026,
+      year: checkYear,
       lastValue: 0,
     },
   });
-  assert(counter.year === 2026, "Expected counter year to be 2026");
+  assert(counter.year === checkYear, `Expected counter year to be ${checkYear}`);
   assert(counter.lastValue === 0, "Expected initial lastValue to be 0");
 
   const incrementedCounter = await prisma.orderNumberCounter.update({
-    where: { year: 2026 },
+    where: { year: checkYear },
     data: { lastValue: { increment: 1 } },
   });
   assert(incrementedCounter.lastValue === 1, "Expected incremented lastValue to be 1");
@@ -471,7 +472,7 @@ async function check() {
   await prisma.measurementVersion.delete({ where: { id: orderVersion.id } });
   await prisma.customer.delete({ where: { id: orderCustomer.id } });
   await prisma.garmentType.delete({ where: { id: orderGarment.id } });
-  await prisma.orderNumberCounter.delete({ where: { year: 2026 } });
+  await prisma.orderNumberCounter.deleteMany({ where: { year: checkYear } });
 
   console.log("Order models and partial unique index check passed. Successfully verified constraints, partial index, and cascade delete.");
 }

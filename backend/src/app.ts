@@ -20,10 +20,31 @@ import { calendarRouter } from "./modules/calendar/index.js";
 import { receiptRouter } from "./modules/receipts/index.js";
 import { whatsappRouter } from "./modules/whatsapp/index.js";
 
+import { requestLogger } from "./shared/logger/index.js";
+import { rateLimitWrites } from "./shared/middleware/rateLimiter.js";
+
 const app = express();
 
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim())
+  : ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS error: Origin ${origin} not allowed`));
+      }
+    },
+    credentials: true
+  })
+);
+
 app.use(express.json());
+app.use(requestLogger);
+app.use(rateLimitWrites());
 
 app.get("/api/health", (_req, res) => {
   sendSuccess(res, { status: "ok" });

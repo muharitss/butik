@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
 import { sendError } from "../http/response.js";
 import { AppError } from "./appError.js";
+import { logger } from "../logger/index.js";
 
 export const errorHandler: ErrorRequestHandler = (
   err: Error,
@@ -62,6 +63,10 @@ export const errorHandler: ErrorRequestHandler = (
   }
 
   // Fallback for unhandled unexpected errors
-  console.error("Unhandled error:", err);
+  logger.error("Unhandled error:", {
+    name: err.name,
+    message: err.message,
+    stack: err.stack
+  });
   sendError(res, "INTERNAL_ERROR", "An unexpected error occurred", 500);
 };

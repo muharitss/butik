@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "test": "npx tsx src/lib/apiClient.check.ts",
+    "test": "npx tsx src/runChecks.ts",
     "preview": "vite preview"
   },
   "dependencies": {

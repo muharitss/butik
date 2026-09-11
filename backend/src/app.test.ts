@@ -66,4 +66,82 @@ test("express app integration routes", async (t) => {
       });
     }
   );
+
+  await t.test("CORS allows configured origin and includes CORS headers", async () => {
+    const res = await fetch(`${baseUrl}/api/health`, {
+      headers: { Origin: "http://localhost:5173" }
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("access-control-allow-origin"), "http://localhost:5173");
+  });
+
+  await t.test("Logger sanitizes sensitive keys and secrets", async () => {
+    const { sanitizeMeta } = await import("./shared/logger/index.js");
+    const sample = {
+      password: "supersecretpassword",
+      apiKey: "secret_123",
+      authorization: "Bearer sensitive_token",
+      customer: {
+        name: "Test User",
+        token: "nested_token"
+      }
+    };
+    const sanitized = sanitizeMeta(sample) as Record<string, unknown>;
+    assert.equal(sanitized.password, "[REDACTED]");
+    assert.equal(sanitized.apiKey, "[REDACTED]");
+    assert.equal(sanitized.authorization, "[REDACTED]");
+    assert.equal((sanitized.customer as Record<string, unknown>).name, "Test User");
+    assert.equal((sanitized.customer as Record<string, unknown>).token, "[REDACTED]");
+  });
+
+  await t.test("Rate limiter middleware blocks excessive write requests when active", async () => {
+    const { rateLimitWrites, resetRateLimits } = await import("./shared/middleware/rateLimiter.js");
+    resetRateLimits();
+
+    // Create a mini limiter with max 2 requests
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production"; // temporarily enable enforcement
+
+    try {
+      const limiter = rateLimitWrites({ max: 2, windowMs: 60000 });
+      let statusCalled: number | null = null;
+      let nextCalled = 0;
+
+      const mockReq = {
+        method: "POST",
+        headers: {},
+        ip: "192.168.1.100",
+        socket: {}
+      } as unknown as import("express").Request;
+
+      const mockRes = {
+        setHeader: () => {},
+        status: (code: number) => {
+          statusCalled = code;
+          return mockRes;
+        },
+        json: () => {}
+      } as unknown as import("express").Response;
+
+      const mockNext = () => {
+        nextCalled++;
+      };
+
+      // 1st request -> pass
+      limiter(mockReq, mockRes, mockNext);
+      assert.equal(nextCalled, 1);
+
+      // 2nd request -> pass
+      limiter(mockReq, mockRes, mockNext);
+      assert.equal(nextCalled, 2);
+
+      // 3rd request -> blocked (429)
+      limiter(mockReq, mockRes, mockNext);
+      assert.equal(nextCalled, 2);
+      assert.equal(statusCalled, 429);
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      resetRateLimits();
+    }
+  });
 });
