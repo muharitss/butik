@@ -6,8 +6,18 @@ import {
   updateGarmentType,
   deactivateGarmentType,
 } from './api/garments.api.ts';
+import {
+  GarmentListTable,
+  GarmentDetailDialog,
+  GarmentListPage,
+} from './index.ts';
 
 async function runGarmentSelfChecks() {
+  // Component exports check
+  assert.equal(typeof GarmentListTable, 'function', 'GarmentListTable should be a component');
+  assert.equal(typeof GarmentDetailDialog, 'function', 'GarmentDetailDialog should be a component');
+  assert.equal(typeof GarmentListPage, 'function', 'GarmentListPage should be a component');
+
   const originalFetch = globalThis.fetch;
 
   try {

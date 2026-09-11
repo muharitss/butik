@@ -259,7 +259,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-6 pb-4 border-b border-border bg-card">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-md bg-primary/10 text-primary">

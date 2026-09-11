@@ -2,14 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -22,19 +15,22 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Plus,
   Search,
-  Pencil,
   Eye,
   EyeOff,
   Scissors,
   Loader2,
   AlertTriangle,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
 } from 'lucide-react';
 import type { GarmentType } from '../types/garments.types.ts';
-import { fetchGarmentTypes, deactivateGarmentType, updateGarmentType } from '../api/garments.api.ts';
+import {
+  fetchGarmentTypes,
+  deactivateGarmentType,
+  updateGarmentType,
+} from '../api/garments.api.ts';
 import { GarmentFormDialog } from '../components/GarmentFormDialog.tsx';
+import { GarmentListTable } from '../components/GarmentListTable.tsx';
+import { GarmentDetailDialog } from '../components/GarmentDetailDialog.tsx';
 
 export const GarmentListPage: React.FC = () => {
   const [garments, setGarments] = useState<GarmentType[]>([]);
@@ -45,9 +41,13 @@ export const GarmentListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [includeInactive, setIncludeInactive] = useState(false);
 
-  // Form Dialog state
-  const [dialogOpen, setDialogOpen] = useState(false);
+  // Form Dialog state (Create & Edit)
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [garmentToEdit, setGarmentToEdit] = useState<GarmentType | null>(null);
+
+  // Detail Dialog state
+  const [selectedGarmentForDetail, setSelectedGarmentForDetail] = useState<GarmentType | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   // Deactivate confirmation state
   const [garmentToDeactivate, setGarmentToDeactivate] = useState<GarmentType | null>(null);
@@ -92,13 +92,19 @@ export const GarmentListPage: React.FC = () => {
   // Open Create Dialog
   const handleOpenCreate = () => {
     setGarmentToEdit(null);
-    setDialogOpen(true);
+    setFormDialogOpen(true);
   };
 
   // Open Edit Dialog
   const handleOpenEdit = (item: GarmentType) => {
     setGarmentToEdit(item);
-    setDialogOpen(true);
+    setFormDialogOpen(true);
+  };
+
+  // Open Detail Dialog
+  const handleRowClick = (item: GarmentType) => {
+    setSelectedGarmentForDetail(item);
+    setDetailDialogOpen(true);
   };
 
   // Handle Form Success
@@ -112,6 +118,10 @@ export const GarmentListPage: React.FC = () => {
       }
       return [saved, ...prev];
     });
+
+    if (selectedGarmentForDetail?.id === saved.id) {
+      setSelectedGarmentForDetail(saved);
+    }
   };
 
   // Confirm Deactivate
@@ -126,6 +136,16 @@ export const GarmentListPage: React.FC = () => {
           ? prev.map((g) => (g.id === updated.id ? updated : g))
           : prev.filter((g) => g.id !== updated.id)
       );
+
+      if (selectedGarmentForDetail?.id === updated.id) {
+        if (includeInactive) {
+          setSelectedGarmentForDetail(updated);
+        } else {
+          setSelectedGarmentForDetail(null);
+          setDetailDialogOpen(false);
+        }
+      }
+
       setGarmentToDeactivate(null);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Gagal menonaktifkan tipe busana');
@@ -140,6 +160,10 @@ export const GarmentListPage: React.FC = () => {
     try {
       const updated = await updateGarmentType(item.id, { isActive: true });
       setGarments((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+
+      if (selectedGarmentForDetail?.id === updated.id) {
+        setSelectedGarmentForDetail(updated);
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal mengaktifkan kembali tipe busana');
     } finally {
@@ -148,7 +172,7 @@ export const GarmentListPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="garments-page">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -174,17 +198,17 @@ export const GarmentListPage: React.FC = () => {
           >
             {includeInactive ? (
               <>
-                <Eye className="h-3.5 w-3.5 mr-1.5" /> Menampilkan Nonaktif
+                <Eye className="size-3.5 mr-1.5" /> Menampilkan Nonaktif
               </>
             ) : (
               <>
-                <EyeOff className="h-3.5 w-3.5 mr-1.5" /> Sembunyikan Nonaktif
+                <EyeOff className="size-3.5 mr-1.5" /> Sembunyikan Nonaktif
               </>
             )}
           </Button>
 
           <Button onClick={handleOpenCreate} size="sm" className="text-xs">
-            <Plus className="h-4 w-4 mr-1.5" /> Tambah Tipe Busana
+            <Plus className="size-4 mr-1.5" /> Tambah Tipe Busana
           </Button>
         </div>
       </div>
@@ -192,7 +216,7 @@ export const GarmentListPage: React.FC = () => {
       {/* Search Bar */}
       <div className="flex items-center gap-2 max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
             placeholder="Cari tipe busana atau nama ukuran..."
             className="pl-9 text-sm"
@@ -205,23 +229,23 @@ export const GarmentListPage: React.FC = () => {
       {/* Error State */}
       {error && (
         <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="size-4" />
           <AlertTitle>Kesalahan</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Content Grid */}
+      {/* Content */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Loader2 className="h-8 w-8 animate-spin mb-3 text-primary" />
+          <Loader2 className="size-8 animate-spin mb-3 text-primary" />
           <p className="text-sm">Memuat data tipe busana...</p>
         </div>
       ) : filteredGarments.length === 0 ? (
         <Card className="border-dashed bg-card/40">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <div className="p-3 rounded-full bg-muted mb-3 text-muted-foreground">
-              <Scissors className="h-6 w-6" />
+              <Scissors className="size-6" />
             </div>
             <h3 className="font-heading font-semibold text-base text-foreground">
               {searchQuery ? 'Tidak Ada Tipe Busana yang Sesuai' : 'Belum Ada Tipe Busana'}
@@ -233,132 +257,37 @@ export const GarmentListPage: React.FC = () => {
             </p>
             {!searchQuery && (
               <Button onClick={handleOpenCreate} size="sm" className="text-xs">
-                <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Tipe Busana Baru
+                <Plus className="size-3.5 mr-1" /> Tambah Tipe Busana Baru
               </Button>
             )}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredGarments.map((item) => (
-            <Card
-              key={item.id}
-              className={`flex flex-col transition-all hover:border-foreground/20 ${
-                !item.isActive ? 'opacity-75 bg-muted/20 border-dashed' : ''
-              }`}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <span>{item.name}</span>
-                    </CardTitle>
-                    {item.description ? (
-                      <CardDescription className="text-xs line-clamp-2">
-                        {item.description}
-                      </CardDescription>
-                    ) : (
-                      <CardDescription className="text-xs italic text-muted-foreground/60">
-                        Tidak ada deskripsi tambahan
-                      </CardDescription>
-                    )}
-                  </div>
-                  <div>
-                    {item.isActive ? (
-                      <Badge variant="default" className="text-[10px] px-2 py-0.5">
-                        <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-400" /> Aktif
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-[10px] px-2 py-0.5 text-muted-foreground">
-                        <XCircle className="h-3 w-3 mr-1" /> Nonaktif
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="flex-1 pb-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium">Spesifikasi Ukuran:</span>
-                    <span className="text-[11px]">
-                      {item.measurementFields?.length || 0} bidang ukuran
-                    </span>
-                  </div>
-
-                  {/* Measurement field chips */}
-                  {item.measurementFields && item.measurementFields.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pt-1">
-                      {item.measurementFields.map((field) => (
-                        <span
-                          key={field.id || field.fieldKey}
-                          className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-md border ${
-                            field.isRequired
-                              ? 'bg-secondary/60 text-secondary-foreground border-border'
-                              : 'bg-muted/40 text-muted-foreground border-border/50'
-                          }`}
-                          title={`Kunci: ${field.fieldKey} (${field.unit}) ${
-                            field.isRequired ? '- Wajib' : '- Opsional'
-                          }`}
-                        >
-                          {field.label}
-                          <span className="text-[10px] text-muted-foreground ml-1">
-                            ({field.unit})
-                          </span>
-                          {field.isRequired && (
-                            <span className="text-primary font-bold ml-0.5">*</span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs italic text-muted-foreground/70 py-1">
-                      Belum ada bidang ukuran yang dikonfigurasikan.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-
-              <CardFooter className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-8"
-                  onClick={() => handleOpenEdit(item)}
-                >
-                  <Pencil className="h-3.5 w-3.5 mr-1" /> Ubah
-                </Button>
-
-                {item.isActive ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setGarmentToDeactivate(item)}
-                  >
-                    Nonaktifkan
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="text-xs h-8"
-                    onClick={() => handleReactivate(item)}
-                    disabled={actionLoading}
-                  >
-                    Aktifkan Kembali
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <GarmentListTable
+          garments={filteredGarments}
+          onRowClick={handleRowClick}
+          onEdit={handleOpenEdit}
+          onDeactivate={setGarmentToDeactivate}
+          onReactivate={handleReactivate}
+          actionLoading={actionLoading}
+        />
       )}
+
+      {/* Detail Dialog */}
+      <GarmentDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        garment={selectedGarmentForDetail}
+        onEdit={handleOpenEdit}
+        onDeactivate={setGarmentToDeactivate}
+        onReactivate={handleReactivate}
+        actionLoading={actionLoading}
+      />
 
       {/* Form Dialog for Create & Edit */}
       <GarmentFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
         garmentTypeToEdit={garmentToEdit}
         onSuccess={handleFormSuccess}
       />
@@ -368,11 +297,11 @@ export const GarmentListPage: React.FC = () => {
         open={Boolean(garmentToDeactivate)}
         onOpenChange={(open) => !open && setGarmentToDeactivate(null)}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-full bg-destructive/10 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
+                <AlertTriangle className="size-5" />
               </div>
               <DialogTitle className="font-heading text-lg">
                 Konfirmasi Nonaktifkan
@@ -393,7 +322,7 @@ export const GarmentListPage: React.FC = () => {
 
           {actionError && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="size-4" />
               <AlertDescription className="text-xs">{actionError}</AlertDescription>
             </Alert>
           )}
@@ -413,7 +342,7 @@ export const GarmentListPage: React.FC = () => {
               onClick={handleConfirmDeactivate}
               disabled={actionLoading}
             >
-              {actionLoading && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              {actionLoading && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
               Ya, Nonaktifkan
             </Button>
           </DialogFooter>
