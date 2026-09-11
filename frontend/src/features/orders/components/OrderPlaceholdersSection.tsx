@@ -1,33 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, RefreshCw, Paperclip } from 'lucide-react';
+import { RefreshCw, Paperclip } from 'lucide-react';
 
 export const OrderPlaceholdersSection: React.FC = () => {
   return (
     <div className="space-y-4" id="order-future-placeholders">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Fittings Placeholder */}
-        <Card className="border-dashed bg-card/60">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Ruler className="size-4 text-muted-foreground" />
-                <CardTitle className="text-sm font-semibold">Fitting Appointments</CardTitle>
-              </div>
-              <Badge variant="outline" className="text-[10px]">Phase 5 Reserved</Badge>
-            </div>
-            <CardDescription className="text-xs">
-              Trial fittings, fit adjustment feedback, and tailor appointments.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground italic">
-              Fitting schedules and adjustment tracking will be enabled in Phase 5 (TASK-020 – TASK-021).
-            </p>
-          </CardContent>
-        </Card>
 
         {/* Revisions Placeholder */}
         <Card className="border-dashed bg-card/60">

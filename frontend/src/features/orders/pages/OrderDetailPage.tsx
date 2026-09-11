@@ -21,6 +21,7 @@ import { OrderSnapshotSection } from '../components/OrderSnapshotSection.tsx';
 import { OrderHistoryTimeline } from '../components/OrderHistoryTimeline.tsx';
 import { OrderPlaceholdersSection } from '../components/OrderPlaceholdersSection.tsx';
 import { OrderPaymentsSection } from '../../payments/components/OrderPaymentsSection.tsx';
+import { OrderFittingsSection } from '../../fittings/index.ts';
 import { OrderEditMetadataDialog } from '../components/OrderEditMetadataDialog.tsx';
 import { OrderEditItemsDialog } from '../components/OrderEditItemsDialog.tsx';
 
@@ -151,6 +152,12 @@ export const OrderDetailPage: React.FC = () => {
 
           {/* Payment Transactions Section */}
           <OrderPaymentsSection
+            order={order}
+            onOrderUpdated={(updated) => setOrder(updated)}
+          />
+
+          {/* Fitting Appointments Section */}
+          <OrderFittingsSection
             order={order}
             onOrderUpdated={(updated) => setOrder(updated)}
           />
