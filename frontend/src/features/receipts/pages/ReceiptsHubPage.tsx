@@ -81,7 +81,7 @@ export const ReceiptsHubPage: React.FC = () => {
   }, [selectedOrderId]);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto" id="receipts-hub-page">
+    <div className="space-y-6" id="receipts-hub-page">
       {/* Header */}
       <div className="print:hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
         <div>

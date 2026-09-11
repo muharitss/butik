@@ -148,8 +148,6 @@ export const OrderListPage: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <Card className="border shadow-xs">
-        <CardContent className="p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {/* Search Filter */}
             <div className="relative">
@@ -240,8 +238,6 @@ export const OrderListPage: React.FC = () => {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
 
       {/* Error alert */}
       {error && (

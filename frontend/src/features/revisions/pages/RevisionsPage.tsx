@@ -23,7 +23,7 @@ export const RevisionsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto" id="revisions-hub-page">
+    <div className="space-y-6" id="revisions-hub-page">
       <div>
         <div className="flex items-center gap-2">
           <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">

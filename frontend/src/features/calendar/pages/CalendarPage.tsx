@@ -95,7 +95,7 @@ export const CalendarPage: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full" id="calendar-page">
+    <div className="space-y-6" id="calendar-page">
       <CalendarHeader
         year={year}
         month={month}

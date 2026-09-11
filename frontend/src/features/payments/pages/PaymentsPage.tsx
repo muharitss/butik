@@ -124,7 +124,7 @@ export const PaymentsPage: React.FC = () => {
   }, [orders, filterTab]);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto" id="payments-ledger-page">
+    <div className="space-y-6" id="payments-ledger-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
         <div>

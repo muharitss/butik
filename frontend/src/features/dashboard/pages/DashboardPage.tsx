@@ -51,7 +51,7 @@ export const DashboardPage: React.FC = () => {
   }, [loadDashboard]);
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full" id="dashboard-page">
+    <div className="space-y-6" id="dashboard-page">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
