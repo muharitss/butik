@@ -1,3 +1,5 @@
+import type { CustomerOrderSummary } from '../../orders/types/orders.types.ts';
+
 export interface Customer {
   id: string;
   name: string;
@@ -8,7 +10,7 @@ export interface Customer {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
-  orders?: unknown[];
+  orders?: CustomerOrderSummary[];
 }
 
 export interface CustomerInput {

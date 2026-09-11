@@ -267,8 +267,8 @@ export const CustomerDetailPage: React.FC = () => {
         customerName={customer.name}
       />
 
-      {/* Reserved Order History Placeholder Section */}
-      <OrderHistorySection customerId={customer.id} />
+      {/* Customer Order History Section */}
+      <OrderHistorySection customerId={customer.id} orders={customer.orders} />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

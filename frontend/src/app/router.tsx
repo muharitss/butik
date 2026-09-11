@@ -10,6 +10,11 @@ import {
   CustomerEditPage,
 } from '../features/customers/index.ts';
 import { GarmentListPage } from '../features/garments/index.ts';
+import {
+  OrderListPage,
+  OrderCreatePage,
+  OrderDetailPage,
+} from '../features/orders/index.ts';
 
 export const router = createBrowserRouter([
   {
@@ -22,14 +27,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'orders',
-        element: (
-          <PlaceholderPage
-            title="Orders Management"
-            icon="📋"
-            phase="Phase 3 (TASK-014 – TASK-017)"
-            description="Manage client custom tailoring orders, line items, status workflow transitions, and measurement snapshots."
-          />
-        ),
+        element: <OrderListPage />,
+      },
+      {
+        path: 'orders/new',
+        element: <OrderCreatePage />,
+      },
+      {
+        path: 'orders/:id',
+        element: <OrderDetailPage />,
       },
       {
         path: 'customers',
