@@ -17,6 +17,7 @@ model User {
   measurementVersions  MeasurementVersion[]
   orderStatusHistories OrderStatusHistory[]
   payments             Payment[]
+  orderAttachments     OrderAttachment[]
 
   @@map("users")
 }
@@ -138,6 +139,7 @@ model Order {
   payments             Payment[]
   fittings             Fitting[]
   revisions            Revision[]
+  attachments          OrderAttachment[]
 
   @@index([customerId])
   @@index([deadlineAt])
@@ -264,5 +266,25 @@ model Revision {
 
   @@index([orderId])
   @@map("revisions")
+}
+
+model OrderAttachment {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId            String    @map("order_id") @db.Uuid
+  type               String
+  cloudinaryPublicId String    @map("cloudinary_public_id")
+  secureUrl          String    @map("secure_url")
+  format             String?
+  width              Int?
+  height             Int?
+  uploadedBy         String?   @map("uploaded_by") @db.Uuid
+  uploadedAt         DateTime  @default(now()) @map("uploaded_at") @db.Timestamptz
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
+
+  order              Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  user               User?     @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_attachments")
 }
 

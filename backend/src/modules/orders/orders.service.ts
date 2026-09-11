@@ -576,13 +576,21 @@ export async function getOrderById(
         include: { user: true }
       },
       payments: {
-        orderBy: { recordedAt: "desc" }
+        orderBy: { recordedAt: "desc" },
+        include: {
+          user: true,
+          reversedPayment: true
+        }
       },
       fittings: {
         orderBy: { fittingNumber: "asc" }
       },
       revisions: {
         orderBy: { createdAt: "asc" }
+      },
+      attachments: {
+        where: { deletedAt: null },
+        orderBy: { uploadedAt: "asc" }
       }
     }
   });
@@ -612,7 +620,7 @@ export async function getOrderById(
     payments: order.payments,
     fittings: order.fittings,
     revisions: order.revisions,
-    attachments: []
+    attachments: order.attachments
   };
 }
 

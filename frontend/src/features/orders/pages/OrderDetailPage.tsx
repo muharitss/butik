@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { buttonVariants } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -22,11 +22,13 @@ import { OrderHistoryTimeline } from '../components/OrderHistoryTimeline.tsx';
 import { OrderPlaceholdersSection } from '../components/OrderPlaceholdersSection.tsx';
 import { OrderPaymentsSection } from '../../payments/components/OrderPaymentsSection.tsx';
 import { OrderFittingsSection } from '../../fittings/index.ts';
+import { OrderRevisionsSection } from '../../revisions/index.ts';
 import { OrderEditMetadataDialog } from '../components/OrderEditMetadataDialog.tsx';
 import { OrderEditItemsDialog } from '../components/OrderEditItemsDialog.tsx';
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,29 @@ export const OrderDetailPage: React.FC = () => {
   // Dialog states
   const [editMetadataOpen, setEditMetadataOpen] = useState(false);
   const [editItemsOpen, setEditItemsOpen] = useState(false);
+  const [createRevisionOpen, setCreateRevisionOpen] = useState(false);
+  const [prefillFittingId, setPrefillFittingId] = useState<string | null>(null);
+
+  // Detect URL trigger for revision creation (e.g. ?action=create-revision&fittingId=...)
+  useEffect(() => {
+    const action =
+      searchParams.get('action') ||
+      (searchParams.get('createRevision') === 'true' ? 'create-revision' : null);
+    if (action === 'create-revision') {
+      const fittingId = searchParams.get('fittingId');
+      if (fittingId) {
+        setPrefillFittingId(fittingId);
+      }
+      setCreateRevisionOpen(true);
+    }
+  }, [searchParams]);
+
+  const handleOpenCreateRevision = (fittingId?: string) => {
+    if (fittingId) {
+      setPrefillFittingId(fittingId);
+    }
+    setCreateRevisionOpen(true);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -160,6 +185,19 @@ export const OrderDetailPage: React.FC = () => {
           <OrderFittingsSection
             order={order}
             onOrderUpdated={(updated) => setOrder(updated)}
+            onOpenCreateRevision={handleOpenCreateRevision}
+          />
+
+          {/* Garment Revisions & Alterations Section */}
+          <OrderRevisionsSection
+            order={order}
+            onOrderUpdated={(updated) => setOrder(updated)}
+            externalCreateOpen={createRevisionOpen}
+            onCloseExternalCreate={() => {
+              setCreateRevisionOpen(false);
+              setPrefillFittingId(null);
+            }}
+            prefillFittingId={prefillFittingId}
           />
 
           {/* Reserved Future Section Placeholders */}

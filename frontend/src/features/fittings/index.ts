@@ -1,4 +1,5 @@
 export { OrderFittingsSection } from './components/OrderFittingsSection.tsx';
+export { FittingsPage } from './pages/FittingsPage.tsx';
 export {
   fetchOrderFittings,
   scheduleFitting,

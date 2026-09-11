@@ -13,6 +13,7 @@ import { orderRouter } from "./modules/orders/index.js";
 import { paymentRouter } from "./modules/payments/index.js";
 import { fittingRouter } from "./modules/fittings/index.js";
 import { revisionRouter } from "./modules/revisions/index.js";
+import { attachmentRouter } from "./modules/attachments/index.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/garment-types", garmentRouter);
 app.use("/api/orders/:orderId/payments", paymentRouter);
 app.use("/api/orders/:orderId/fittings", fittingRouter);
 app.use("/api/orders/:orderId/revisions", revisionRouter);
+app.use("/api/orders/:orderId/attachments", attachmentRouter);
 app.use("/api/orders", orderRouter);
 
 app.use(errorHandler);

@@ -15,6 +15,9 @@ import {
   OrderCreatePage,
   OrderDetailPage,
 } from '../features/orders/index.ts';
+import { RevisionsPage } from '../features/revisions/index.ts';
+import { PaymentsPage } from '../features/payments/index.ts';
+import { FittingsPage } from '../features/fittings/index.ts';
 
 export const router = createBrowserRouter([
   {
@@ -70,36 +73,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'payments',
-        element: (
-          <PlaceholderPage
-            title="Payment Ledger"
-            icon="💳"
-            phase="Phase 4 (TASK-018 – TASK-019)"
-            description="Down payments, balance settlements, reversal adjustments, and revenue tracking."
-          />
-        ),
+        element: <PaymentsPage />,
       },
       {
         path: 'fittings',
-        element: (
-          <PlaceholderPage
-            title="Fittings & Alterations"
-            icon="🪡"
-            phase="Phase 5 (TASK-020 – TASK-021)"
-            description="Schedule customer fitting sessions, record measurement adjustments, and resolve garment fit."
-          />
-        ),
+        element: <FittingsPage />,
       },
       {
         path: 'revisions',
-        element: (
-          <PlaceholderPage
-            title="Revisions Tracking"
-            icon="🔄"
-            phase="Phase 5 (TASK-022 – TASK-023)"
-            description="Track customer-requested modifications and alteration tasks."
-          />
-        ),
+        element: <RevisionsPage />,
       },
       {
         path: 'receipts',

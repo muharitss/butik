@@ -2,6 +2,7 @@ import type { Customer, PaginationMeta } from '../../customers/types/customers.t
 import type { GarmentType } from '../../garments/types/garments.types.ts';
 import type { Payment } from '../../payments/types/payments.types.ts';
 import type { Fitting } from '../../fittings/types/fittings.types.ts';
+import type { Revision } from '../../revisions/types/revisions.types.ts';
 
 export type OrderStatus =
   | 'DRAFT'
@@ -100,7 +101,7 @@ export interface Order {
   paymentsSummary?: PaymentsSummary;
   payments?: Payment[];
   fittings?: Fitting[];
-  revisions?: unknown[];
+  revisions?: Revision[];
   attachments?: unknown[];
 }
 

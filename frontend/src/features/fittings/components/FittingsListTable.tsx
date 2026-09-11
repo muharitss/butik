@@ -33,6 +33,7 @@ interface FittingsListTableProps {
   fittings: Fitting[];
   onRecordResultClick: (fitting: Fitting) => void;
   onCancelClick: (fitting: Fitting) => void;
+  onCreateRevisionClick?: (fitting: Fitting) => void;
 }
 
 export const FittingsListTable: React.FC<FittingsListTableProps> = ({
@@ -40,6 +41,7 @@ export const FittingsListTable: React.FC<FittingsListTableProps> = ({
   fittings,
   onRecordResultClick,
   onCancelClick,
+  onCreateRevisionClick,
 }) => {
   if (fittings.length === 0) {
     return (
@@ -172,13 +174,24 @@ export const FittingsListTable: React.FC<FittingsListTableProps> = ({
                     )}
 
                     {isNeedsRevision && (
-                      <Link
-                        to={`/revisions?orderId=${orderId}&fittingId=${fitting.id}`}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                        id={`link-create-revision-${fitting.fittingNumber}`}
-                      >
-                        Create Revision <ArrowRight className="size-3" />
-                      </Link>
+                      onCreateRevisionClick ? (
+                        <button
+                          type="button"
+                          onClick={() => onCreateRevisionClick(fitting)}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                          id={`link-create-revision-${fitting.fittingNumber}`}
+                        >
+                          Create Revision <ArrowRight className="size-3" />
+                        </button>
+                      ) : (
+                        <Link
+                          to={`/revisions?orderId=${orderId}&fittingId=${fitting.id}`}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                          id={`link-create-revision-${fitting.fittingNumber}`}
+                        >
+                          Create Revision <ArrowRight className="size-3" />
+                        </Link>
+                      )
                     )}
 
                     {!isScheduled && !isNeedsRevision && (

@@ -32,11 +32,13 @@ import { fetchOrder } from '../../orders/api/orders.api.ts';
 interface OrderFittingsSectionProps {
   order: Order;
   onOrderUpdated: (order: Order) => void;
+  onOpenCreateRevision?: (fittingId: string) => void;
 }
 
 export const OrderFittingsSection: React.FC<OrderFittingsSectionProps> = ({
   order,
   onOrderUpdated,
+  onOpenCreateRevision,
 }) => {
   const [scheduleOpen, setScheduleOpen] = useState<boolean>(false);
   const [recordResultFitting, setRecordResultFitting] = useState<Fitting | null>(null);
@@ -171,13 +173,28 @@ export const OrderFittingsSection: React.FC<OrderFittingsSectionProps> = ({
                   Fitting outcome was saved as <strong>Needs Revision</strong>. The order status has automatically transitioned to <strong>REVISION</strong>. You can now immediately create a revision ticket with tailor adjustment instructions.
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <Link
-                    to={`/revisions?orderId=${order.id}&fittingId=${revisionPromptFitting.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md transition-colors"
-                    id="btn-prompt-create-revision"
-                  >
-                    Create Revision Ticket <ArrowRight className="size-3.5" />
-                  </Link>
+                  {onOpenCreateRevision ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 text-xs gap-1 font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md cursor-pointer"
+                      onClick={() => {
+                        onOpenCreateRevision(revisionPromptFitting.id);
+                        setRevisionPromptFitting(null);
+                      }}
+                      id="btn-prompt-create-revision"
+                    >
+                      Create Revision Ticket <ArrowRight className="size-3.5" />
+                    </Button>
+                  ) : (
+                    <Link
+                      to={`/revisions?orderId=${order.id}&fittingId=${revisionPromptFitting.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md transition-colors"
+                      id="btn-prompt-create-revision"
+                    >
+                      Create Revision Ticket <ArrowRight className="size-3.5" />
+                    </Link>
+                  )}
 
                   <Button
                     type="button"
@@ -220,6 +237,7 @@ export const OrderFittingsSection: React.FC<OrderFittingsSectionProps> = ({
           fittings={fittings}
           onRecordResultClick={(f) => setRecordResultFitting(f)}
           onCancelClick={(f) => setCancelFitting(f)}
+          onCreateRevisionClick={onOpenCreateRevision ? (f) => onOpenCreateRevision(f.id) : undefined}
         />
 
         {/* Schedule Dialog */}
