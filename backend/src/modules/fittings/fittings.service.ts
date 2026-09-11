@@ -122,20 +122,23 @@ export async function scheduleFitting(
       );
     }
 
-    await recordAudit({
-      actorId,
-      entityType: "fitting",
-      entityId: fitting.id,
-      action: "fitting.created",
-      after: {
-        id: fitting.id,
-        orderId: fitting.orderId,
-        fittingNumber: fitting.fittingNumber,
-        status: fitting.status,
-        scheduledAt: fitting.scheduledAt,
-        notes: fitting.notes
-      }
-    });
+    await recordAudit(
+      {
+        actorId,
+        entityType: "fitting",
+        entityId: fitting.id,
+        action: "fitting.created",
+        after: {
+          id: fitting.id,
+          orderId: fitting.orderId,
+          fittingNumber: fitting.fittingNumber,
+          status: fitting.status,
+          scheduledAt: fitting.scheduledAt,
+          notes: fitting.notes
+        }
+      },
+      tx
+    );
 
     return fitting;
   });
@@ -196,14 +199,17 @@ export async function updateFitting(
         }
       });
 
-      await recordAudit({
-        actorId,
-        entityType: "fitting",
-        entityId: fittingId,
-        action: "fitting.cancelled",
-        before: fitting,
-        after: updatedFitting
-      });
+      await recordAudit(
+        {
+          actorId,
+          entityType: "fitting",
+          entityId: fittingId,
+          action: "fitting.cancelled",
+          before: fitting,
+          after: updatedFitting
+        },
+        tx
+      );
 
       return updatedFitting;
     }
@@ -259,14 +265,17 @@ export async function updateFitting(
         }
       }
 
-      await recordAudit({
-        actorId,
-        entityType: "fitting",
-        entityId: fittingId,
-        action: "fitting.result_recorded",
-        before: fitting,
-        after: updatedFitting
-      });
+      await recordAudit(
+        {
+          actorId,
+          entityType: "fitting",
+          entityId: fittingId,
+          action: "fitting.result_recorded",
+          before: fitting,
+          after: updatedFitting
+        },
+        tx
+      );
 
       return updatedFitting;
     }
@@ -281,14 +290,17 @@ export async function updateFitting(
       data: updateData
     });
 
-    await recordAudit({
-      actorId,
-      entityType: "fitting",
-      entityId: fittingId,
-      action: "fitting.updated",
-      before: fitting,
-      after: updatedFitting
-    });
+    await recordAudit(
+      {
+        actorId,
+        entityType: "fitting",
+        entityId: fittingId,
+        action: "fitting.updated",
+        before: fitting,
+        after: updatedFitting
+      },
+      tx
+    );
 
     return updatedFitting;
   });

@@ -1,4 +1,5 @@
 # TASK-027 — Dashboard API and UI
+Status: COMPLETE
 
 ## Objective
 Implement the operator dashboard summarizing current business state.

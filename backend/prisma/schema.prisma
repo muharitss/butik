@@ -18,6 +18,7 @@ model User {
   orderStatusHistories OrderStatusHistory[]
   payments             Payment[]
   orderAttachments     OrderAttachment[]
+  auditLogs            AuditLog[]
 
   @@map("users")
 }
@@ -288,3 +289,19 @@ model OrderAttachment {
   @@map("order_attachments")
 }
 
+model AuditLog {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId    String?   @map("actor_id") @db.Uuid
+  entityType String    @map("entity_type")
+  entityId   String    @map("entity_id") @db.Uuid
+  action     String
+  before     Json?
+  after      Json?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  actor      User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

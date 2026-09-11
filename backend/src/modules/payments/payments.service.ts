@@ -205,23 +205,26 @@ export async function recordPayment(
       }
     });
 
-    await recordAudit({
-      actorId: validActorId,
-      entityType: "payment",
-      entityId: payment.id,
-      action: "payment.recorded",
-      after: {
-        id: payment.id,
-        orderId: payment.orderId,
-        type: payment.type,
-        amount: payment.amount.toString(),
-        method: payment.method,
-        note: payment.note,
-        reversedPaymentId: payment.reversedPaymentId,
-        orderPaidTotalCache: paidTotal.toString(),
-        orderPaymentStatusCache: paymentStatus
-      }
-    });
+    await recordAudit(
+      {
+        actorId: validActorId,
+        entityType: "payment",
+        entityId: payment.id,
+        action: "payment.recorded",
+        after: {
+          id: payment.id,
+          orderId: payment.orderId,
+          type: payment.type,
+          amount: payment.amount.toString(),
+          method: payment.method,
+          note: payment.note,
+          reversedPaymentId: payment.reversedPaymentId,
+          orderPaidTotalCache: paidTotal.toString(),
+          orderPaymentStatusCache: paymentStatus
+        }
+      },
+      tx
+    );
 
     return payment;
   });

@@ -131,13 +131,16 @@ export async function createRevisionHandler(
         }
       });
 
-      await recordAudit({
-        actorId,
-        entityType: "revision",
-        entityId: revision.id,
-        action: "revision.created",
-        after: revision
-      });
+      await recordAudit(
+        {
+          actorId,
+          entityType: "revision",
+          entityId: revision.id,
+          action: "revision.created",
+          after: revision
+        },
+        tx
+      );
 
       return revision;
     });
@@ -224,14 +227,17 @@ export async function updateRevisionHandler(
         action = "revision.cancelled";
       }
 
-      await recordAudit({
-        actorId,
-        entityType: "revision",
-        entityId: id,
-        action,
-        before: revision,
-        after: updatedRevision
-      });
+      await recordAudit(
+        {
+          actorId,
+          entityType: "revision",
+          entityId: id,
+          action,
+          before: revision,
+          after: updatedRevision
+        },
+        tx
+      );
 
       return {
         revision: updatedRevision,

@@ -3,7 +3,6 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/prisma/client.js";
 import {
   NotFoundError,
-  BusinessRuleViolationError,
   ConflictError
 } from "../../shared/errors/index.js";
 import { sendSuccess, buildPaginationMeta } from "../../shared/http/index.js";
@@ -144,8 +143,13 @@ export async function createCustomer(
       }
     });
 
+    const actorId =
+      (req.headers["x-actor-id"] as string) ||
+      (req as unknown as { actorId?: string }).actorId ||
+      null;
+
     await recordAudit({
-      actorId: null,
+      actorId,
       entityType: "customer",
       entityId: customer.id,
       action: "create",
@@ -192,8 +196,13 @@ export async function updateCustomer(
       }
     });
 
+    const actorId =
+      (req.headers["x-actor-id"] as string) ||
+      (req as unknown as { actorId?: string }).actorId ||
+      null;
+
     await recordAudit({
-      actorId: null,
+      actorId,
       entityType: "customer",
       entityId: id,
       action: "update",
@@ -237,8 +246,13 @@ export async function deleteCustomer(
       data: { deletedAt: new Date() }
     });
 
+    const actorId =
+      (req.headers["x-actor-id"] as string) ||
+      (req as unknown as { actorId?: string }).actorId ||
+      null;
+
     await recordAudit({
-      actorId: null,
+      actorId,
       entityType: "customer",
       entityId: id,
       action: "delete",

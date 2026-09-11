@@ -113,13 +113,16 @@ export async function createAttachmentHandler(
         }
       });
 
-      await recordAudit({
-        actorId: validUploadedBy,
-        entityType: "order_attachment",
-        entityId: attachment.id,
-        action: "attachment.uploaded",
-        after: attachment
-      });
+      await recordAudit(
+        {
+          actorId: validUploadedBy,
+          entityType: "order_attachment",
+          entityId: attachment.id,
+          action: "attachment.uploaded",
+          after: attachment
+        },
+        tx
+      );
 
       return attachment;
     });
@@ -208,14 +211,17 @@ export async function deleteAttachmentHandler(
         data: { deletedAt: new Date() }
       });
 
-      await recordAudit({
-        actorId,
-        entityType: "order_attachment",
-        entityId: id,
-        action: "attachment.deleted",
-        before: existing,
-        after: updated
-      });
+      await recordAudit(
+        {
+          actorId,
+          entityType: "order_attachment",
+          entityId: id,
+          action: "attachment.deleted",
+          before: existing,
+          after: updated
+        },
+        tx
+      );
 
       return updated;
     });

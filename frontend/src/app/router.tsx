@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './AppShell.tsx';
-import { DashboardPage } from './pages/DashboardPage.tsx';
+import { DashboardPage } from '../features/dashboard/index.ts';
 import { PlaceholderPage } from './pages/PlaceholderPage.tsx';
 
 import {
