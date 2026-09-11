@@ -19,7 +19,7 @@ import { OrderItemsTable } from '../components/OrderItemsTable.tsx';
 import { OrderPricingSummaryCard } from '../components/OrderPricingSummaryCard.tsx';
 import { OrderSnapshotSection } from '../components/OrderSnapshotSection.tsx';
 import { OrderHistoryTimeline } from '../components/OrderHistoryTimeline.tsx';
-import { OrderPlaceholdersSection } from '../components/OrderPlaceholdersSection.tsx';
+import { OrderAttachmentsSection } from '../../attachments/index.ts';
 import { OrderPaymentsSection } from '../../payments/components/OrderPaymentsSection.tsx';
 import { OrderFittingsSection } from '../../fittings/index.ts';
 import { OrderRevisionsSection } from '../../revisions/index.ts';
@@ -200,8 +200,11 @@ export const OrderDetailPage: React.FC = () => {
             prefillFittingId={prefillFittingId}
           />
 
-          {/* Reserved Future Section Placeholders */}
-          <OrderPlaceholdersSection />
+          {/* Order Design Attachments & Photo Gallery Section */}
+          <OrderAttachmentsSection
+            order={order}
+            onOrderUpdated={(updated) => setOrder(updated)}
+          />
         </div>
 
         {/* Right 1 Column: Pricing Summary & Audit Timeline */}

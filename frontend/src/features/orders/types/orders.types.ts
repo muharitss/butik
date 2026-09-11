@@ -3,6 +3,7 @@ import type { GarmentType } from '../../garments/types/garments.types.ts';
 import type { Payment } from '../../payments/types/payments.types.ts';
 import type { Fitting } from '../../fittings/types/fittings.types.ts';
 import type { Revision } from '../../revisions/types/revisions.types.ts';
+import type { OrderAttachment } from '../../attachments/types/attachments.types.ts';
 
 export type OrderStatus =
   | 'DRAFT'
@@ -102,7 +103,7 @@ export interface Order {
   payments?: Payment[];
   fittings?: Fitting[];
   revisions?: Revision[];
-  attachments?: unknown[];
+  attachments?: OrderAttachment[];
 }
 
 export interface CustomerOrderSummary {
