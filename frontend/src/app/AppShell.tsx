@@ -91,7 +91,7 @@ export const AppShell: React.FC = () => {
       {/* Sidebar */}
       <aside
         id="app-sidebar"
-        className={`app-sidebar fixed md:sticky top-0 inset-y-0 left-0 z-50 w-64 shrink-0 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-screen transition-transform duration-200 md:translate-x-0 ${
+        className={`app-sidebar print:hidden fixed md:sticky top-0 inset-y-0 left-0 z-50 w-64 shrink-0 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border h-screen transition-transform duration-200 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
@@ -178,9 +178,9 @@ export const AppShell: React.FC = () => {
       </aside>
 
       {/* Main Area */}
-      <div className="app-main flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="app-main flex-1 flex flex-col min-w-0 min-h-screen print:min-h-0 print:block">
         <header
-          className="app-header h-16 border-b border-border bg-background/95 backdrop-blur-xs sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between gap-4"
+          className="app-header print:hidden h-16 border-b border-border bg-background/95 backdrop-blur-xs sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between gap-4"
           id="app-header"
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -212,7 +212,7 @@ export const AppShell: React.FC = () => {
           </div>
         </header>
 
-        <main className="app-content flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto" id="app-content">
+        <main className="app-content flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto print:p-0 print:m-0 print:max-w-none" id="app-content">
           <Outlet />
         </main>
       </div>

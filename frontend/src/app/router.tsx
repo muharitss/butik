@@ -19,6 +19,7 @@ import { RevisionsPage } from '../features/revisions/index.ts';
 import { PaymentsPage } from '../features/payments/index.ts';
 import { FittingsPage } from '../features/fittings/index.ts';
 import { CalendarPage } from '../features/calendar/index.ts';
+import { ReceiptsHubPage, OrderReceiptPage } from '../features/receipts/index.ts';
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +41,10 @@ export const router = createBrowserRouter([
       {
         path: 'orders/:id',
         element: <OrderDetailPage />,
+      },
+      {
+        path: 'orders/:id/receipt',
+        element: <OrderReceiptPage />,
       },
       {
         path: 'customers',
@@ -79,14 +84,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'receipts',
-        element: (
-          <PlaceholderPage
-            title="Receipts & Invoicing"
-            icon="🧾"
-            phase="Phase 9 (TASK-029 – TASK-030)"
-            description="Generate clean printable receipts and WhatsApp notification links."
-          />
-        ),
+        element: <ReceiptsHubPage />,
       },
       {
         path: '*',

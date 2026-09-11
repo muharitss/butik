@@ -9,6 +9,7 @@ import {
   User,
   AlertTriangle,
   Loader2,
+  Receipt,
 } from 'lucide-react';
 import type { Order } from '../types/orders.types.ts';
 import { fetchOrder } from '../api/orders.api.ts';
@@ -147,11 +148,21 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-right sm:self-center">
-          <span className="text-xs text-muted-foreground block">Total Valuation</span>
-          <span className="font-mono text-xl font-bold text-foreground">
-            {formatCurrency(order.total)}
-          </span>
+        <div className="flex flex-row sm:flex-col items-end gap-2.5 sm:self-center">
+          <div className="text-right">
+            <span className="text-xs text-muted-foreground block">Total Valuation</span>
+            <span className="font-mono text-xl font-bold text-foreground">
+              {formatCurrency(order.total)}
+            </span>
+          </div>
+          <Link
+            to={`/orders/${order.id}/receipt`}
+            className={buttonVariants({ variant: 'outline', size: 'xs' })}
+            id="btn-print-order-receipt"
+          >
+            <Receipt className="size-3.5 mr-1.5 text-primary" />
+            Cetak Nota
+          </Link>
         </div>
       </div>
 
