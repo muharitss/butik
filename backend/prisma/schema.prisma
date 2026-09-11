@@ -16,6 +16,7 @@ model User {
   createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz
   measurementVersions  MeasurementVersion[]
   orderStatusHistories OrderStatusHistory[]
+  payments             Payment[]
 
   @@map("users")
 }
@@ -134,6 +135,7 @@ model Order {
   items                OrderItem[]
   measurementSnapshots OrderMeasurementSnapshot[]
   statusHistories      OrderStatusHistory[]
+  payments             Payment[]
 
   @@index([customerId])
   @@index([deadlineAt])
@@ -201,3 +203,24 @@ model OrderStatusHistory {
   @@index([orderId])
   @@map("order_status_histories")
 }
+
+model Payment {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId           String    @map("order_id") @db.Uuid
+  type              String
+  amount            Decimal   @db.Decimal(14, 2)
+  method            String?
+  note              String?
+  reversedPaymentId String?   @map("reversed_payment_id") @db.Uuid
+  recordedBy        String?   @map("recorded_by") @db.Uuid
+  recordedAt        DateTime  @default(now()) @map("recorded_at") @db.Timestamptz
+
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reversedPayment   Payment?  @relation("PaymentReversals", fields: [reversedPaymentId], references: [id], onDelete: Restrict)
+  reversalPayments  Payment[] @relation("PaymentReversals")
+  user              User?     @relation(fields: [recordedBy], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("payments")
+}
+

@@ -78,3 +78,9 @@ Each entry: **Decision**, **Context**, **Alternatives Considered**, **Consequenc
 **Decision:** Both stay in MVP scope, contrary to a common instinct to cut "nice to have" views.
 **Context:** The tailor's core stated pain point is *scattered manual tracking*; a dashboard (what needs attention now) and calendar (what's due when) are the direct replacement for that manual tracking, not decorative additions. They require no new domain entities — both are read-only aggregations over Orders/Fittings/Payments already in MVP.
 **Consequences:** Their implementation cost is low relative to their value, so no MVP-boundary risk is introduced.
+
+## D-014: Order Balance Guard Uses Denormalized Cache
+**Decision:** The `orders` module's status-transition guard for `READY → COMPLETED` inspects `orders.paid_total_cache` directly rather than importing `getOrderBalance` from the `payments` module.
+**Context:** Circular dependency avoidance between `orders` and `payments` modules. Since `paid_total_cache` is updated atomically in the same database transaction on every payment write, the cached value is guaranteed to be accurate at any status-transition point.
+**Consequences:** Avoids a circular dependency between `orders` and `payments`; `getOrderBalance` remains exported by `payments` for external callers or queries needing authoritative calculation.
+

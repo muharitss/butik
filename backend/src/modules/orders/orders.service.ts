@@ -573,6 +573,9 @@ export async function getOrderById(
       statusHistories: {
         orderBy: { changedAt: "asc" },
         include: { user: true }
+      },
+      payments: {
+        orderBy: { recordedAt: "desc" }
       }
     }
   });
@@ -599,7 +602,7 @@ export async function getOrderById(
     ...order,
     measurementSnapshot: activeSnapshot,
     paymentsSummary,
-    payments: [],
+    payments: order.payments,
     fittings: [],
     revisions: [],
     attachments: []
