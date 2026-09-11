@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Loader2,
   Receipt,
+  MessageSquare,
 } from 'lucide-react';
 import type { Order } from '../types/orders.types.ts';
 import { fetchOrder } from '../api/orders.api.ts';
@@ -26,6 +27,7 @@ import { OrderFittingsSection } from '../../fittings/index.ts';
 import { OrderRevisionsSection } from '../../revisions/index.ts';
 import { OrderEditMetadataDialog } from '../components/OrderEditMetadataDialog.tsx';
 import { OrderEditItemsDialog } from '../components/OrderEditItemsDialog.tsx';
+import { OrderWhatsAppDialog } from '../components/OrderWhatsAppDialog.tsx';
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +41,7 @@ export const OrderDetailPage: React.FC = () => {
   const [editMetadataOpen, setEditMetadataOpen] = useState(false);
   const [editItemsOpen, setEditItemsOpen] = useState(false);
   const [createRevisionOpen, setCreateRevisionOpen] = useState(false);
+  const [whatsappOpen, setWhatsappOpen] = useState(false);
   const [prefillFittingId, setPrefillFittingId] = useState<string | null>(null);
 
   // Detect URL trigger for revision creation (e.g. ?action=create-revision&fittingId=...)
@@ -155,14 +158,27 @@ export const OrderDetailPage: React.FC = () => {
               {formatCurrency(order.total)}
             </span>
           </div>
-          <Link
-            to={`/orders/${order.id}/receipt`}
-            className={buttonVariants({ variant: 'outline', size: 'xs' })}
-            id="btn-print-order-receipt"
-          >
-            <Receipt className="size-3.5 mr-1.5 text-primary" />
-            Cetak Nota
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={() => setWhatsappOpen(true)}
+              id="btn-open-whatsapp-dialog"
+              title="Kirim pesan WhatsApp ke pelanggan"
+            >
+              <MessageSquare className="size-3.5 mr-1.5 text-emerald-600" />
+              WhatsApp
+            </Button>
+            <Link
+              to={`/orders/${order.id}/receipt`}
+              className={buttonVariants({ variant: 'outline', size: 'xs' })}
+              id="btn-print-order-receipt"
+            >
+              <Receipt className="size-3.5 mr-1.5 text-primary" />
+              Cetak Nota
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -246,6 +262,13 @@ export const OrderDetailPage: React.FC = () => {
         onOpenChange={setEditItemsOpen}
         order={order}
         onSuccess={(updated) => setOrder(updated)}
+      />
+
+      {/* WhatsApp Action Dialog */}
+      <OrderWhatsAppDialog
+        open={whatsappOpen}
+        onOpenChange={setWhatsappOpen}
+        order={order}
       />
     </div>
   );

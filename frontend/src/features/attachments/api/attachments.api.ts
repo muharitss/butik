@@ -53,7 +53,7 @@ export function uploadToCloudinaryDirect(
     }
 
     xhr.onload = () => {
-      let data: Record<string, unknown> | null = null;
+      let data: Record<string, unknown> | null;
       try {
         data = JSON.parse(xhr.responseText);
       } catch {

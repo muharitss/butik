@@ -63,4 +63,4 @@ No silent architecture drift is permitted.
 
 ## Current Implementation Phase
 
-**Planning complete — implementation not yet started.** All tasks in `tasks/` are in `TODO` state. Update this section as phases complete.
+**Phase 9 (Receipt & WhatsApp Link) complete.** TASK-029 (Printable Receipt) and TASK-030 (WhatsApp Link Helper) are implemented and verified with automated test suites and runnable checks.

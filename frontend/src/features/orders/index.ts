@@ -11,6 +11,7 @@ export { OrderPricingSummaryCard } from './components/OrderPricingSummaryCard.ts
 export { OrderSnapshotSection } from './components/OrderSnapshotSection.tsx';
 export { OrderHistoryTimeline } from './components/OrderHistoryTimeline.tsx';
 export { OrderPlaceholdersSection } from './components/OrderPlaceholdersSection.tsx';
+export { OrderWhatsAppDialog } from './components/OrderWhatsAppDialog.tsx';
 
 // Constants & Helpers
 export * from './constants/orderRules.ts';

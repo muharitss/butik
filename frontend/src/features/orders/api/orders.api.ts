@@ -79,3 +79,21 @@ export async function transitionOrder(
 export async function resnapshotOrder(id: string): Promise<Order> {
   return apiClient.post<Order>(`/orders/${id}/resnapshot`, {});
 }
+
+export type WhatsappTemplate = 'confirmation' | 'ready' | 'payment_reminder';
+
+export interface WhatsappLinkResult {
+  url: string;
+  template: WhatsappTemplate;
+  phone: string;
+  message: string;
+}
+
+export async function fetchWhatsappLink(
+  orderId: string,
+  template: WhatsappTemplate
+): Promise<WhatsappLinkResult> {
+  return apiClient.get<WhatsappLinkResult>(
+    `/orders/${orderId}/whatsapp-link?template=${template}`
+  );
+}
