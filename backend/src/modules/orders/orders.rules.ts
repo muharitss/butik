@@ -45,6 +45,7 @@ export interface TransitionOrderEntity {
   items?: unknown[];
   customer?: { id: string; deletedAt: Date | null } | null;
   measurementSnapshots?: unknown[];
+  revisions?: Array<{ status: string }>;
 }
 
 export type TransitionGuard = (
@@ -93,8 +94,17 @@ export const TRANSITION_GUARDS: Partial<
       );
     }
   },
-  "FITTING->READY": (_order) => {
-    // ponytail: Revision check (no open revisions) will query revisions table once introduced in TASK-021
+  "FITTING->READY": (order) => {
+    if (order.revisions && Array.isArray(order.revisions)) {
+      const hasOpenRevisions = order.revisions.some(
+        (r) => r.status === "OPEN" || r.status === "IN_PROGRESS"
+      );
+      if (hasOpenRevisions) {
+        throw new BusinessRuleViolationError(
+          "Cannot transition order from FITTING to READY: open revisions exist"
+        );
+      }
+    }
   },
   "READY->COMPLETED": (order) => {
     const remainingBalance = subtract(order.total, order.paidTotalCache);

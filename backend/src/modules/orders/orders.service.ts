@@ -406,7 +406,8 @@ export async function transitionOrder(
       include: {
         customer: true,
         items: true,
-        measurementSnapshots: true
+        measurementSnapshots: true,
+        revisions: true
       }
     });
 
@@ -579,6 +580,9 @@ export async function getOrderById(
       },
       fittings: {
         orderBy: { fittingNumber: "asc" }
+      },
+      revisions: {
+        orderBy: { createdAt: "asc" }
       }
     }
   });
@@ -607,7 +611,7 @@ export async function getOrderById(
     paymentsSummary,
     payments: order.payments,
     fittings: order.fittings,
-    revisions: [],
+    revisions: order.revisions,
     attachments: []
   };
 }

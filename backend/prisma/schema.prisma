@@ -137,6 +137,7 @@ model Order {
   statusHistories      OrderStatusHistory[]
   payments             Payment[]
   fittings             Fitting[]
+  revisions            Revision[]
 
   @@index([customerId])
   @@index([deadlineAt])
@@ -239,9 +240,29 @@ model Fitting {
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   order         Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  revisions     Revision[]
 
   @@unique([orderId, fittingNumber])
   @@index([orderId])
   @@map("fittings")
+}
+
+model Revision {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String    @map("order_id") @db.Uuid
+  fittingId       String?   @map("fitting_id") @db.Uuid
+  issue           String
+  requestedChange String?   @map("requested_change")
+  status          String    @default("OPEN")
+  notes           String?
+  resolvedAt      DateTime? @map("resolved_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  fitting         Fitting?  @relation(fields: [fittingId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@map("revisions")
 }
 

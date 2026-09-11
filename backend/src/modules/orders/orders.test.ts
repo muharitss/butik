@@ -33,6 +33,15 @@ test("Order Creation & Item Replacement API integration tests", async (t) => {
 
     // Clean up created orders and dependencies
     if (createdOrderIds.length > 0) {
+      await prisma.revision.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.fitting.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
+      await prisma.payment.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
       await prisma.orderStatusHistory.deleteMany({
         where: { orderId: { in: createdOrderIds } }
       });

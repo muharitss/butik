@@ -31,6 +31,9 @@ test("Fitting Schema & API integration tests", async (t) => {
     server.close();
 
     if (createdOrderIds.length > 0) {
+      await prisma.revision.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
       await prisma.fitting.deleteMany({
         where: { orderId: { in: createdOrderIds } }
       });

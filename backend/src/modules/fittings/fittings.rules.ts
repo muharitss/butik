@@ -76,27 +76,15 @@ export function validateOrderAllowsFitting(orderStatus: string): void {
 
 /**
  * Helper to count open (OPEN or IN_PROGRESS) revisions for an order.
- * Safely queries Prisma if the revision model exists, or returns 0 if not yet migrated.
  */
 export async function countOpenRevisions(
   tx: Prisma.TransactionClient,
   orderId: string
 ): Promise<number> {
-  const client = tx as unknown as {
-    revision?: {
-      count: (args: {
-        where: { orderId: string; status: { in: string[] } };
-      }) => Promise<number>;
-    };
-  };
-
-  if (client.revision && typeof client.revision.count === "function") {
-    return client.revision.count({
-      where: {
-        orderId,
-        status: { in: ["OPEN", "IN_PROGRESS"] }
-      }
-    });
-  }
-  return 0;
+  return tx.revision.count({
+    where: {
+      orderId,
+      status: { in: ["OPEN", "IN_PROGRESS"] }
+    }
+  });
 }
