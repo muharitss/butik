@@ -42,7 +42,7 @@ interface GarmentDetailDialogProps {
 const formatDate = (isoString?: string | null) => {
   if (!isoString) return '—';
   try {
-    return new Date(isoString).toLocaleDateString('id-ID', {
+    return new Date(isoString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -83,7 +83,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                     {garment.name}
                   </DialogTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    ID Referensi: <span className="font-mono">{garment.id}</span>
+                    Reference ID: <span className="font-mono">{garment.id}</span>
                   </p>
                 </div>
               </div>
@@ -91,11 +91,11 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
               <div>
                 {garment.isActive ? (
                   <Badge variant="default" className="text-xs px-2.5 py-0.5">
-                    <CheckCircle2 className="size-3.5 mr-1" /> Aktif
+                    <CheckCircle2 className="size-3.5 mr-1" /> Active
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs px-2.5 py-0.5 text-muted-foreground">
-                    <XCircle className="size-3.5 mr-1" /> Nonaktif
+                    <XCircle className="size-3.5 mr-1" /> Inactive
                   </Badge>
                 )}
               </div>
@@ -104,7 +104,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
               {garment.description || (
                 <span className="italic text-muted-foreground/60">
-                  Tidak ada catatan deskripsi tambahan untuk model busana ini.
+                  No additional description provided for this garment type.
                 </span>
               )}
             </DialogDescription>
@@ -118,36 +118,36 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
             <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Ruler className="size-3.5" />
-                <span>Total Spesifikasi</span>
+                <span>Total Specifications</span>
               </div>
               <p className="text-sm font-semibold text-foreground">
-                {fields.length} Bidang
+                {fields.length} {fields.length === 1 ? 'Field' : 'Fields'}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                {requiredCount} Wajib, {optionalCount} Opsional
+                {requiredCount} Required, {optionalCount} Optional
               </p>
             </div>
 
             <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Calendar className="size-3.5" />
-                <span>Dibuat Pada</span>
+                <span>Created At</span>
               </div>
               <p className="text-sm font-semibold text-foreground">
                 {formatDate(garment.createdAt)}
               </p>
-              <p className="text-[11px] text-muted-foreground">Master baru terdaftar</p>
+              <p className="text-[11px] text-muted-foreground">Initial record created</p>
             </div>
 
             <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="size-3.5" />
-                <span>Pembaruan Terakhir</span>
+                <span>Last Updated</span>
               </div>
               <p className="text-sm font-semibold text-foreground">
                 {formatDate(garment.updatedAt)}
               </p>
-              <p className="text-[11px] text-muted-foreground">Riwayat konfigurasi</p>
+              <p className="text-[11px] text-muted-foreground">Configuration history</p>
             </div>
           </div>
 
@@ -156,14 +156,14 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-heading font-semibold text-sm text-foreground">
-                  Daftar Bidang Ukuran Tubuh
+                  Body Measurement Fields
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Bidang ukuran yang wajib atau dapat diisi penjahit saat menerima pesanan model ini.
+                  Measurement fields required or optional for tailors when creating an order for this garment.
                 </p>
               </div>
               <Badge variant="secondary" className="text-xs font-mono">
-                {fields.length} parameter
+                {fields.length} {fields.length === 1 ? 'parameter' : 'parameters'}
               </Badge>
             </div>
 
@@ -171,7 +171,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
               <div className="p-6 text-center border border-dashed rounded-lg bg-card/40 space-y-2">
                 <AlertCircle className="size-6 text-muted-foreground/60 mx-auto" />
                 <p className="text-xs text-muted-foreground">
-                  Tipe busana ini belum memiliki bidang ukuran yang dikonfigurasikan.
+                  This garment type has no measurement fields configured yet.
                 </p>
                 <Button
                   variant="outline"
@@ -183,7 +183,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                   }}
                 >
                   <Pencil className="size-3.5 mr-1" />
-                  Konfigurasi Bidang Ukuran
+                  Configure Measurement Fields
                 </Button>
               </div>
             ) : (
@@ -192,10 +192,10 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                   <TableHeader className="bg-muted/40">
                     <TableRow>
                       <TableHead className="w-[10%] text-xs font-semibold">#</TableHead>
-                      <TableHead className="w-[35%] text-xs font-semibold">Label Ukuran</TableHead>
-                      <TableHead className="w-[25%] text-xs font-semibold">Kunci Sistem</TableHead>
-                      <TableHead className="w-[15%] text-xs font-semibold">Satuan</TableHead>
-                      <TableHead className="w-[15%] text-right text-xs font-semibold">Sifat</TableHead>
+                      <TableHead className="w-[35%] text-xs font-semibold">Field Label</TableHead>
+                      <TableHead className="w-[25%] text-xs font-semibold">System Key</TableHead>
+                      <TableHead className="w-[15%] text-xs font-semibold">Unit</TableHead>
+                      <TableHead className="w-[15%] text-right text-xs font-semibold">Requirement</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -216,11 +216,11 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                         <TableCell className="text-right">
                           {field.isRequired ? (
                             <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                              Wajib
+                              Required
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                              Opsional
+                              Optional
                             </Badge>
                           )}
                         </TableCell>
@@ -248,7 +248,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                 }}
                 disabled={actionLoading}
               >
-                Nonaktifkan Model
+                Deactivate Garment
               </Button>
             ) : (
               <Button
@@ -261,7 +261,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                 }}
                 disabled={actionLoading}
               >
-                Aktifkan Kembali
+                Reactivate
               </Button>
             )}
           </div>
@@ -274,7 +274,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
               className="text-xs"
               onClick={() => onOpenChange(false)}
             >
-              Tutup
+              Close
             </Button>
             <Button
               type="button"
@@ -286,7 +286,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
               }}
             >
               <Pencil className="size-3.5 mr-1" />
-              Ubah Tipe Busana
+              Edit Garment Type
             </Button>
           </div>
         </DialogFooter>

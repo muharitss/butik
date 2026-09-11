@@ -40,35 +40,35 @@ interface GarmentFormDialogProps {
 
 const TEMPLATES: Record<string, { label: string; fields: GarmentMeasurementFieldInput[] }> = {
   atasan: {
-    label: 'Atasan / Kemeja',
+    label: 'Top / Shirt',
     fields: [
-      { fieldKey: 'lingkar_dada', label: 'Lingkar Dada', unit: 'cm', isRequired: true, sortOrder: 0 },
-      { fieldKey: 'panjang_baju', label: 'Panjang Baju', unit: 'cm', isRequired: true, sortOrder: 1 },
-      { fieldKey: 'lebar_bahu', label: 'Lebar Bahu', unit: 'cm', isRequired: true, sortOrder: 2 },
-      { fieldKey: 'panjang_lengan', label: 'Panjang Lengan', unit: 'cm', isRequired: true, sortOrder: 3 },
-      { fieldKey: 'lingkar_leher', label: 'Lingkar Leher', unit: 'cm', isRequired: false, sortOrder: 4 },
+      { fieldKey: 'chest', label: 'Chest Circumference', unit: 'cm', isRequired: true, sortOrder: 0 },
+      { fieldKey: 'shirt_length', label: 'Shirt Length', unit: 'cm', isRequired: true, sortOrder: 1 },
+      { fieldKey: 'shoulder_width', label: 'Shoulder Width', unit: 'cm', isRequired: true, sortOrder: 2 },
+      { fieldKey: 'sleeve_length', label: 'Sleeve Length', unit: 'cm', isRequired: true, sortOrder: 3 },
+      { fieldKey: 'neck_circumference', label: 'Neck Circumference', unit: 'cm', isRequired: false, sortOrder: 4 },
     ],
   },
   bawahan: {
-    label: 'Celana / Rok',
+    label: 'Pants / Skirt',
     fields: [
-      { fieldKey: 'lingkar_pinggang', label: 'Lingkar Pinggang', unit: 'cm', isRequired: true, sortOrder: 0 },
-      { fieldKey: 'lingkar_pinggul', label: 'Lingkar Pinggul', unit: 'cm', isRequired: true, sortOrder: 1 },
-      { fieldKey: 'panjang_celana', label: 'Panjang Celana', unit: 'cm', isRequired: true, sortOrder: 2 },
-      { fieldKey: 'lingkar_paha', label: 'Lingkar Paha', unit: 'cm', isRequired: false, sortOrder: 3 },
-      { fieldKey: 'pesak', label: 'Tinggi Pesak', unit: 'cm', isRequired: false, sortOrder: 4 },
+      { fieldKey: 'waist', label: 'Waist Circumference', unit: 'cm', isRequired: true, sortOrder: 0 },
+      { fieldKey: 'hip', label: 'Hip Circumference', unit: 'cm', isRequired: true, sortOrder: 1 },
+      { fieldKey: 'pants_length', label: 'Pants Length', unit: 'cm', isRequired: true, sortOrder: 2 },
+      { fieldKey: 'thigh', label: 'Thigh Circumference', unit: 'cm', isRequired: false, sortOrder: 3 },
+      { fieldKey: 'crotch', label: 'Crotch / Rise', unit: 'cm', isRequired: false, sortOrder: 4 },
     ],
   },
   gamis: {
-    label: 'Gamis / Gaun / Kebaya',
+    label: 'Dress / Gown',
     fields: [
-      { fieldKey: 'lingkar_dada', label: 'Lingkar Dada', unit: 'cm', isRequired: true, sortOrder: 0 },
-      { fieldKey: 'lingkar_pinggang', label: 'Lingkar Pinggang', unit: 'cm', isRequired: true, sortOrder: 1 },
-      { fieldKey: 'lingkar_pinggul', label: 'Lingkar Pinggul', unit: 'cm', isRequired: true, sortOrder: 2 },
-      { fieldKey: 'panjang_gaun', label: 'Panjang Gaun', unit: 'cm', isRequired: true, sortOrder: 3 },
-      { fieldKey: 'lebar_bahu', label: 'Lebar Bahu', unit: 'cm', isRequired: true, sortOrder: 4 },
-      { fieldKey: 'panjang_lengan', label: 'Panjang Lengan', unit: 'cm', isRequired: true, sortOrder: 5 },
-      { fieldKey: 'lingkar_kerung_lengan', label: 'Lingkar Kerung Lengan', unit: 'cm', isRequired: false, sortOrder: 6 },
+      { fieldKey: 'chest', label: 'Chest Circumference', unit: 'cm', isRequired: true, sortOrder: 0 },
+      { fieldKey: 'waist', label: 'Waist Circumference', unit: 'cm', isRequired: true, sortOrder: 1 },
+      { fieldKey: 'hip', label: 'Hip Circumference', unit: 'cm', isRequired: true, sortOrder: 2 },
+      { fieldKey: 'dress_length', label: 'Dress Length', unit: 'cm', isRequired: true, sortOrder: 3 },
+      { fieldKey: 'shoulder_width', label: 'Shoulder Width', unit: 'cm', isRequired: true, sortOrder: 4 },
+      { fieldKey: 'sleeve_length', label: 'Sleeve Length', unit: 'cm', isRequired: true, sortOrder: 5 },
+      { fieldKey: 'armhole', label: 'Armhole Circumference', unit: 'cm', isRequired: false, sortOrder: 6 },
     ],
   },
 };
@@ -186,7 +186,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError('Nama tipe busana wajib diisi.');
+      setError('Garment type name is required.');
       return;
     }
 
@@ -194,21 +194,21 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
     for (let i = 0; i < fields.length; i++) {
       const f = fields[i];
       if (!f.label.trim()) {
-        setError(`Label bidang ukuran pada baris #${i + 1} wajib diisi.`);
+        setError(`Field label on row #${i + 1} is required.`);
         return;
       }
       if (!f.fieldKey.trim()) {
-        setError(`Kunci bidang (field key) pada baris #${i + 1} wajib diisi.`);
+        setError(`Field key on row #${i + 1} is required.`);
         return;
       }
       if (!/^[a-z0-9_]+$/.test(f.fieldKey.trim())) {
         setError(
-          `Kunci bidang "${f.fieldKey}" pada baris #${i + 1} harus berupa huruf kecil, angka, dan garis bawah (_).`
+          `Field key "${f.fieldKey}" on row #${i + 1} must contain only lowercase letters, numbers, and underscores (_).`
         );
         return;
       }
       if (!f.unit.trim()) {
-        setError(`Satuan ukuran pada baris #${i + 1} wajib diisi (misal: cm).`);
+        setError(`Measurement unit on row #${i + 1} is required (e.g., cm).`);
         return;
       }
     }
@@ -217,7 +217,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
     const keys = fields.map((f) => f.fieldKey.trim().toLowerCase());
     const duplicateKey = keys.find((key, idx) => keys.indexOf(key) !== idx);
     if (duplicateKey) {
-      setError(`Kunci bidang "${duplicateKey}" terduplikasi. Setiap bidang harus memiliki kunci unik.`);
+      setError(`Duplicate field key "${duplicateKey}". Each measurement field must have a unique key.`);
       return;
     }
 
@@ -251,7 +251,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
       onSuccess(result);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan tipe busana');
+      setError(err instanceof Error ? err.message : 'Failed to save garment type');
     } finally {
       setSubmitting(false);
     }
@@ -267,10 +267,10 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
             </div>
             <div>
               <DialogTitle className="font-heading text-xl">
-                {isEditing ? 'Ubah Tipe Busana' : 'Tambah Tipe Busana Baru'}
+                {isEditing ? 'Edit Garment Type' : 'Add New Garment Type'}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Konfigurasi model busana serta spesifikasi bidang ukuran badan yang diperlukan saat pemesanan.
+                Configure the garment model and body measurement specifications required during order creation.
               </DialogDescription>
             </div>
           </div>
@@ -280,20 +280,20 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Terjadi Kesalahan</AlertTitle>
+              <AlertTitle>Error</AlertTitle>
               <AlertDescription className="text-xs">{error}</AlertDescription>
             </Alert>
           )}
 
-          {/* Section: Info Utama */}
+          {/* Section: Main Info */}
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="garment-name" className="text-sm font-medium">
-                Nama Tipe Busana <span className="text-destructive">*</span>
+                Garment Type Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="garment-name"
-                placeholder="Contoh: Kebaya Modern, Jas Pria Formal, Gamis Syar'i"
+                placeholder="e.g. Modern Kebaya, Men's Formal Suit, Evening Gown"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -303,11 +303,11 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
 
             <div className="space-y-1.5">
               <Label htmlFor="garment-description" className="text-sm font-medium">
-                Deskripsi / Catatan Tambahan (Opsional)
+                Description / Additional Notes (Optional)
               </Label>
               <Textarea
                 id="garment-description"
-                placeholder="Informasi detail mengenai model busana atau catatan penjahit..."
+                placeholder="Detailed info about the garment model or tailor notes..."
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -316,18 +316,18 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
             </div>
           </div>
 
-          {/* Section: Bidang Ukuran */}
+          {/* Section: Measurement Fields */}
           <div className="space-y-3 pt-2 border-t border-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <Label className="text-sm font-semibold flex items-center gap-1.5">
-                  Daftar Bidang Ukuran Badan
+                  Body Measurement Fields
                   <Badge variant="secondary" className="text-xs">
-                    {fields.length} Bidang
+                    {fields.length} {fields.length === 1 ? 'Field' : 'Fields'}
                   </Badge>
                 </Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Bidang ukuran yang wajib diisi atau disarankan ketika pelanggan memesan tipe busana ini.
+                  Measurement fields required or suggested when customers order this garment type.
                 </p>
               </div>
 
@@ -335,7 +335,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
               {!isEditing && (
                 <div className="flex items-center gap-1 flex-wrap">
                   <span className="text-xs text-muted-foreground flex items-center gap-1 mr-1">
-                    <Sparkles className="h-3 w-3 text-primary" /> Template:
+                    <Sparkles className="h-3 w-3 text-primary" /> Templates:
                   </span>
                   {Object.entries(TEMPLATES).map(([key, item]) => (
                     <Button
@@ -358,10 +358,10 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
             {fields.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border p-6 text-center bg-muted/20">
                 <p className="text-sm text-muted-foreground">
-                  Belum ada bidang ukuran yang ditambahkan.
+                  No measurement fields added yet.
                 </p>
                 <p className="text-xs text-muted-foreground/80 mt-1">
-                  Pilih salah satu template di atas atau klik tombol di bawah untuk menambah manual.
+                  Select a template above or click the button below to add fields manually.
                 </p>
                 <Button
                   type="button"
@@ -371,17 +371,17 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                   onClick={handleAddField}
                   disabled={submitting}
                 >
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Bidang Ukuran
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add Measurement Field
                 </Button>
               </div>
             ) : (
               <div className="space-y-2.5">
                 <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-medium text-muted-foreground px-2">
-                  <div className="sm:col-span-4">Label Bidang (Tampilan)</div>
-                  <div className="sm:col-span-3">Kunci (Key)</div>
-                  <div className="sm:col-span-2">Satuan</div>
-                  <div className="sm:col-span-2 text-center">Status</div>
-                  <div className="sm:col-span-1 text-right">Aksi</div>
+                  <div className="sm:col-span-4">Field Label</div>
+                  <div className="sm:col-span-3">Field Key</div>
+                  <div className="sm:col-span-2">Unit</div>
+                  <div className="sm:col-span-2 text-center">Required?</div>
+                  <div className="sm:col-span-1 text-right">Actions</div>
                 </div>
 
                 {fields.map((field, idx) => (
@@ -392,7 +392,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                     {/* Label */}
                     <div className="w-full sm:col-span-4">
                       <Input
-                        placeholder="Contoh: Lingkar Dada"
+                        placeholder="e.g. Chest Circumference"
                         value={field.label}
                         onChange={(e) => handleFieldChange(idx, 'label', e.target.value)}
                         className="h-8 text-xs"
@@ -403,7 +403,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                     {/* Field Key */}
                     <div className="w-full sm:col-span-3">
                       <Input
-                        placeholder="lingkar_dada"
+                        placeholder="chest"
                         value={field.fieldKey}
                         onChange={(e) => handleFieldChange(idx, 'fieldKey', slugify(e.target.value))}
                         className="h-8 text-xs font-mono"
@@ -432,7 +432,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                         onClick={() => handleFieldChange(idx, 'isRequired', !field.isRequired)}
                         disabled={submitting}
                       >
-                        {field.isRequired ? 'Wajib' : 'Opsional'}
+                        {field.isRequired ? 'Required' : 'Optional'}
                       </Button>
                     </div>
 
@@ -445,7 +445,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                         className="h-7 w-7 p-0"
                         onClick={() => handleMoveField(idx, 'up')}
                         disabled={idx === 0 || submitting}
-                        title="Pindah ke atas"
+                        title="Move up"
                       >
                         <ArrowUp className="h-3.5 w-3.5" />
                       </Button>
@@ -456,7 +456,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                         className="h-7 w-7 p-0"
                         onClick={() => handleMoveField(idx, 'down')}
                         disabled={idx === fields.length - 1 || submitting}
-                        title="Pindah ke bawah"
+                        title="Move down"
                       >
                         <ArrowDown className="h-3.5 w-3.5" />
                       </Button>
@@ -467,7 +467,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                         className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleRemoveField(idx)}
                         disabled={submitting}
-                        title="Hapus bidang"
+                        title="Delete field"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -483,7 +483,7 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
                   onClick={handleAddField}
                   disabled={submitting}
                 >
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Tambah Baris Bidang Ukuran
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add Measurement Field
                 </Button>
               </div>
             )}
@@ -497,11 +497,11 @@ export const GarmentFormDialog: React.FC<GarmentFormDialogProps> = ({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Batal
+            Cancel
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-            {isEditing ? 'Simpan Perubahan' : 'Simpan Tipe Busana'}
+            {isEditing ? 'Save Changes' : 'Save Garment Type'}
           </Button>
         </DialogFooter>
       </DialogContent>

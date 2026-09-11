@@ -62,7 +62,7 @@ export const GarmentListPage: React.FC = () => {
       const data = await fetchGarmentTypes({ includeInactive });
       setGarments(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat daftar tipe busana');
+      setError(err instanceof Error ? err.message : 'Failed to load garment types');
     } finally {
       setLoading(false);
     }
@@ -148,7 +148,7 @@ export const GarmentListPage: React.FC = () => {
 
       setGarmentToDeactivate(null);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Gagal menonaktifkan tipe busana');
+      setActionError(err instanceof Error ? err.message : 'Failed to deactivate garment type');
     } finally {
       setActionLoading(false);
     }
@@ -165,7 +165,7 @@ export const GarmentListPage: React.FC = () => {
         setSelectedGarmentForDetail(updated);
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal mengaktifkan kembali tipe busana');
+      alert(err instanceof Error ? err.message : 'Failed to reactivate garment type');
     } finally {
       setActionLoading(false);
     }
@@ -178,14 +178,14 @@ export const GarmentListPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
-              Tipe Busana & Bidang Ukuran
+              Garment Types & Measurement Fields
             </h1>
             <Badge variant="secondary" className="text-xs">
-              {garments.length} Model
+              {garments.length} {garments.length === 1 ? 'Model' : 'Models'}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Kelola master tipe busana dan daftar spesifikasi ukuran badan yang dibutuhkan saat pembuatan pesanan.
+            Manage master garment types and required body measurement specifications for order creation.
           </p>
         </div>
 
@@ -198,17 +198,17 @@ export const GarmentListPage: React.FC = () => {
           >
             {includeInactive ? (
               <>
-                <Eye className="size-3.5 mr-1.5" /> Menampilkan Nonaktif
+                <Eye className="size-3.5 mr-1.5" /> Showing Inactive
               </>
             ) : (
               <>
-                <EyeOff className="size-3.5 mr-1.5" /> Sembunyikan Nonaktif
+                <EyeOff className="size-3.5 mr-1.5" /> Hide Inactive
               </>
             )}
           </Button>
 
           <Button onClick={handleOpenCreate} size="sm" className="text-xs">
-            <Plus className="size-4 mr-1.5" /> Tambah Tipe Busana
+            <Plus className="size-4 mr-1.5" /> Add Garment Type
           </Button>
         </div>
       </div>
@@ -218,7 +218,7 @@ export const GarmentListPage: React.FC = () => {
         <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
-            placeholder="Cari tipe busana atau nama ukuran..."
+            placeholder="Search garment types or measurement fields..."
             className="pl-9 text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -230,7 +230,7 @@ export const GarmentListPage: React.FC = () => {
       {error && (
         <Alert variant="destructive">
           <AlertTriangle className="size-4" />
-          <AlertTitle>Kesalahan</AlertTitle>
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -239,7 +239,7 @@ export const GarmentListPage: React.FC = () => {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="size-8 animate-spin mb-3 text-primary" />
-          <p className="text-sm">Memuat data tipe busana...</p>
+          <p className="text-sm">Loading garment types...</p>
         </div>
       ) : filteredGarments.length === 0 ? (
         <Card className="border-dashed bg-card/40">
@@ -248,16 +248,16 @@ export const GarmentListPage: React.FC = () => {
               <Scissors className="size-6" />
             </div>
             <h3 className="font-heading font-semibold text-base text-foreground">
-              {searchQuery ? 'Tidak Ada Tipe Busana yang Sesuai' : 'Belum Ada Tipe Busana'}
+              {searchQuery ? 'No Matching Garment Types' : 'No Garment Types Yet'}
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
               {searchQuery
-                ? `Tidak ditemukan tipe busana dengan kata kunci "${searchQuery}". Coba kata kunci lain.`
-                : 'Mulai dengan menambahkan tipe busana pertama Anda untuk mendefinisikan model pakaian dan spesifikasi ukurannya.'}
+                ? `No garment types found matching "${searchQuery}". Try another search term.`
+                : 'Start by adding your first garment type to define clothing styles and measurement specifications.'}
             </p>
             {!searchQuery && (
               <Button onClick={handleOpenCreate} size="sm" className="text-xs">
-                <Plus className="size-3.5 mr-1" /> Tambah Tipe Busana Baru
+                <Plus className="size-3.5 mr-1" /> Add New Garment Type
               </Button>
             )}
           </CardContent>
@@ -304,11 +304,11 @@ export const GarmentListPage: React.FC = () => {
                 <AlertTriangle className="size-5" />
               </div>
               <DialogTitle className="font-heading text-lg">
-                Konfirmasi Nonaktifkan
+                Confirm Deactivation
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs text-muted-foreground pt-2">
-              Apakah Anda yakin ingin menonaktifkan tipe busana{' '}
+              Are you sure you want to deactivate garment type{' '}
               <span className="font-semibold text-foreground">
                 "{garmentToDeactivate?.name}"
               </span>
@@ -317,7 +317,7 @@ export const GarmentListPage: React.FC = () => {
           </DialogHeader>
 
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Tipe busana yang dinonaktifkan tidak akan muncul lagi di daftar pilihan pembuatan pesanan baru, namun tetap tersimpan pada pesanan riwayat yang sudah ada. Anda dapat mengaktifkannya kembali sewaktu-waktu.
+            Deactivated garment types will no longer appear when creating new orders, but remain preserved in existing order records. You can reactivate them at any time.
           </p>
 
           {actionError && (
@@ -334,7 +334,7 @@ export const GarmentListPage: React.FC = () => {
               onClick={() => setGarmentToDeactivate(null)}
               disabled={actionLoading}
             >
-              Batal
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -343,7 +343,7 @@ export const GarmentListPage: React.FC = () => {
               disabled={actionLoading}
             >
               {actionLoading && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
-              Ya, Nonaktifkan
+              Yes, Deactivate
             </Button>
           </DialogFooter>
         </DialogContent>

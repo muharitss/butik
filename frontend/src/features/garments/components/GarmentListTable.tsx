@@ -38,7 +38,7 @@ interface GarmentListTableProps {
 const formatDate = (isoString?: string | null) => {
   if (!isoString) return '—';
   try {
-    return new Date(isoString).toLocaleDateString('id-ID', {
+    return new Date(isoString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -69,19 +69,19 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
         <TableHeader className="bg-muted/40">
           <TableRow>
             <TableHead className="w-[30%] min-w-[200px] text-xs font-semibold">
-              Tipe Busana
+              Garment Type
             </TableHead>
             <TableHead className="w-[35%] min-w-[220px] text-xs font-semibold">
-              Bidang Ukuran
+              Measurement Fields
             </TableHead>
             <TableHead className="w-[12%] text-xs font-semibold">
               Status
             </TableHead>
             <TableHead className="w-[14%] text-xs font-semibold">
-              Terakhir Diperbarui
+              Last Updated
             </TableHead>
             <TableHead className="w-[8%] text-right text-xs font-semibold min-w-[60px]">
-              Aksi
+              Actions
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -98,7 +98,7 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                 className={`cursor-pointer transition-colors hover:bg-muted/50 ${
                   !item.isActive ? 'opacity-75 bg-muted/10' : ''
                 }`}
-                title="Klik untuk melihat rincian tipe busana"
+                title="Click to view garment type details"
               >
                 {/* Garment Name & Description */}
                 <TableCell className="align-top py-3.5">
@@ -116,7 +116,7 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                         </p>
                       ) : (
                         <p className="text-xs italic text-muted-foreground/60 mt-0.5">
-                          Tidak ada deskripsi
+                          No description
                         </p>
                       )}
                     </div>
@@ -130,7 +130,7 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                       <span className="font-medium text-foreground">
                         {fieldsCount}
                       </span>
-                      <span>bidang ukuran</span>
+                      <span>{fieldsCount === 1 ? 'measurement field' : 'measurement fields'}</span>
                     </div>
 
                     {fieldsCount > 0 ? (
@@ -152,13 +152,13 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                         ))}
                         {remainingFields > 0 && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/50">
-                            +{remainingFields} lainnya
+                            +{remainingFields} more
                           </span>
                         )}
                       </div>
                     ) : (
                       <span className="text-xs italic text-muted-foreground/60">
-                        Belum ada konfigurasi
+                        No fields configured
                       </span>
                     )}
                   </div>
@@ -168,14 +168,14 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                 <TableCell className="align-top py-3.5">
                   {item.isActive ? (
                     <Badge variant="default" className="text-[10px] px-2 py-0.5">
-                      <CheckCircle2 className="size-3 mr-1" /> Aktif
+                      <CheckCircle2 className="size-3 mr-1" /> Active
                     </Badge>
                   ) : (
                     <Badge
                       variant="secondary"
                       className="text-[10px] px-2 py-0.5 text-muted-foreground"
                     >
-                      <XCircle className="size-3 mr-1" /> Nonaktif
+                      <XCircle className="size-3 mr-1" /> Inactive
                     </Badge>
                   )}
                 </TableCell>
@@ -198,8 +198,8 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                             variant="ghost"
                             size="icon-sm"
                             className="size-8 text-muted-foreground hover:text-foreground hover:bg-muted"
-                            title="Tindakan"
-                            aria-label={`Tindakan untuk ${item.name}`}
+                            title="Actions"
+                            aria-label={`Actions for ${item.name}`}
                           >
                             <MoreHorizontal className="size-4" />
                           </Button>
@@ -211,14 +211,14 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                           className="cursor-pointer"
                         >
                           <Eye className="size-3.5 mr-2 text-muted-foreground" />
-                          <span>Lihat Detail</span>
+                          <span>View Details</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onEdit(item)}
                           className="cursor-pointer"
                         >
                           <Pencil className="size-3.5 mr-2 text-muted-foreground" />
-                          <span>Ubah Tipe Busana</span>
+                          <span>Edit Garment Type</span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {item.isActive ? (
@@ -229,7 +229,7 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                             className="cursor-pointer"
                           >
                             <XCircle className="size-3.5 mr-2" />
-                            <span>Nonaktifkan</span>
+                            <span>Deactivate</span>
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem
@@ -238,7 +238,7 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                             className="cursor-pointer"
                           >
                             <CheckCircle2 className="size-3.5 mr-2 text-muted-foreground" />
-                            <span>Aktifkan Kembali</span>
+                            <span>Reactivate</span>
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>

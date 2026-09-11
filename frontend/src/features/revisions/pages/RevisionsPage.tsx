@@ -37,7 +37,7 @@ export const RevisionsPage: React.FC = () => {
 
       <div className="p-8 border rounded-lg bg-card shadow-xs space-y-4 max-w-xl">
         <p className="text-sm text-muted-foreground">
-          Buka pesanan dari daftar pesanan untuk melihat atau mencatat rincian revisi dan permak busana pelanggan.
+          Open an order from the order list to view or record customer garment revision and alteration details.
         </p>
 
         <div className="pt-2">
