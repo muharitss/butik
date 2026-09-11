@@ -75,7 +75,7 @@ export const ReceiptsHubPage: React.FC = () => {
     fetchOrderReceipt(selectedOrderId)
       .then((data) => setPreviewReceipt(data))
       .catch((err) =>
-        setReceiptError(err instanceof Error ? err.message : 'Gagal memuat nota pesanan')
+        setReceiptError(err instanceof Error ? err.message : 'Failed to load order receipt')
       )
       .finally(() => setLoadingReceipt(false));
   }, [selectedOrderId]);
@@ -87,11 +87,11 @@ export const ReceiptsHubPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
-              Tanda Terima & Nota
+              Receipts & Invoices
             </h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Pilih atau cari pesanan untuk mencetak nota pelanggan, bukti pembayaran, dan rincian item busana.
+            Select or search for an order to print customer receipts, payment slips, and garment item breakdowns.
           </p>
         </div>
       </div>
@@ -103,7 +103,7 @@ export const ReceiptsHubPage: React.FC = () => {
             <div className="flex items-center gap-2 text-xs">
               <FileCheck2 className="size-4 text-primary" />
               <span className="font-medium text-foreground">
-                Menampilkan Pratinjau Nota:
+                Showing Receipt Preview:
               </span>
               <span className="font-mono font-bold">{previewReceipt?.orderNumber || '...'}</span>
             </div>
@@ -114,14 +114,14 @@ export const ReceiptsHubPage: React.FC = () => {
               onClick={() => setSearchParams({})}
               id="btn-close-receipt-preview"
             >
-              Tutup Pratinjau
+              Close Preview
             </Button>
           </div>
 
           {loadingReceipt ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Loader2 className="size-6 animate-spin mb-2 text-primary" />
-              <span className="text-xs">Memuat data nota...</span>
+              <span className="text-xs">Loading receipt data...</span>
             </div>
           ) : receiptError ? (
             <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-xs flex items-center gap-2">
@@ -143,10 +143,10 @@ export const ReceiptsHubPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-base font-semibold text-foreground">
-                Pilih Pesanan untuk Cetak Nota
+                Select Order to Print Receipt
               </CardTitle>
               <CardDescription className="text-xs">
-                Cari berdasarkan nomor pesanan, nama pelanggan, atau nomor telepon.
+                Search by order number, customer name, or phone number.
               </CardDescription>
             </div>
 
@@ -155,7 +155,7 @@ export const ReceiptsHubPage: React.FC = () => {
               <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Cari pesanan / nama..."
+                placeholder="Search order #, customer, phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 text-xs h-8"
@@ -168,23 +168,23 @@ export const ReceiptsHubPage: React.FC = () => {
           {loadingOrders ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Loader2 className="size-6 animate-spin mb-2 text-primary" />
-              <span className="text-xs">Mencari pesanan...</span>
+              <span className="text-xs">Searching orders...</span>
             </div>
           ) : orders.length === 0 ? (
             <div className="py-10 text-center text-xs text-muted-foreground">
-              Tidak ada pesanan yang cocok dengan pencarian Anda.
+              No orders match your search.
             </div>
           ) : (
             <div className="rounded-md border border-border overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/40">
                   <TableRow className="border-border">
-                    <TableHead className="font-semibold text-xs">No. Pesanan</TableHead>
-                    <TableHead className="font-semibold text-xs">Pelanggan</TableHead>
-                    <TableHead className="font-semibold text-xs">Tanggal</TableHead>
+                    <TableHead className="font-semibold text-xs">Order No.</TableHead>
+                    <TableHead className="font-semibold text-xs">Customer</TableHead>
+                    <TableHead className="font-semibold text-xs">Date</TableHead>
                     <TableHead className="font-semibold text-xs">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-xs">Total Tagihan</TableHead>
-                    <TableHead className="text-right font-semibold text-xs">Aksi Nota</TableHead>
+                    <TableHead className="text-right font-semibold text-xs">Total Amount</TableHead>
+                    <TableHead className="text-right font-semibold text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -228,23 +228,23 @@ export const ReceiptsHubPage: React.FC = () => {
                             variant="outline"
                             size="xs"
                             onClick={() => setSearchParams({ orderId: order.id })}
-                            title="Pratinjau Nota di Sini"
+                            title="Preview Receipt Here"
                           >
                             <Receipt className="size-3 mr-1" />
-                            Pratinjau
+                            Preview
                           </Button>
                           <Link
                             to={`/orders/${order.id}/receipt`}
                             className={buttonVariants({ variant: 'default', size: 'xs' })}
-                            title="Buka Halaman Cetak Nota Penuh"
+                            title="Open Full Printable Receipt Page"
                           >
                             <Printer className="size-3 mr-1" />
-                            Cetak
+                            Print
                           </Link>
                           <Link
                             to={`/orders/${order.id}`}
                             className={buttonVariants({ variant: 'ghost', size: 'xs' })}
-                            title="Lihat Detail Pesanan"
+                            title="View Order Details"
                           >
                             <ExternalLink className="size-3" />
                           </Link>

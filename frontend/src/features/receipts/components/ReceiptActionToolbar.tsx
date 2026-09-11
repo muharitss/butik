@@ -31,12 +31,12 @@ export const ReceiptActionToolbar: React.FC<ReceiptActionToolbarProps> = ({
   const handleCopySummary = async () => {
     try {
       const summaryText = [
-        `*${receipt.boutique.name} - NOTA PESANAN*`,
-        `No. Pesanan: ${receipt.orderNumber}`,
-        `Pelanggan: ${receipt.customer.name}`,
+        `*${receipt.boutique.name} - ORDER RECEIPT*`,
+        `Order No: ${receipt.orderNumber}`,
+        `Customer: ${receipt.customer.name}`,
         `Total: ${formatCurrency(receipt.totals.total)}`,
-        `Terbayar: ${formatCurrency(receipt.paymentsSummary.paidTotal)}`,
-        `Sisa: ${formatCurrency(receipt.paymentsSummary.remainingBalance)}`,
+        `Paid: ${formatCurrency(receipt.paymentsSummary.paidTotal)}`,
+        `Balance: ${formatCurrency(receipt.paymentsSummary.remainingBalance)}`,
         `Status: ${receipt.status}`,
       ].join('\n');
 
@@ -60,14 +60,14 @@ export const ReceiptActionToolbar: React.FC<ReceiptActionToolbarProps> = ({
           id="btn-back-to-order"
         >
           <ArrowLeft className="size-3.5 mr-1.5" />
-          Detail Pesanan
+          Order Details
         </Link>
         <Link
           to="/receipts"
           className={buttonVariants({ variant: 'ghost', size: 'sm' })}
           id="btn-all-receipts"
         >
-          Daftar Nota
+          All Receipts
         </Link>
       </div>
 
@@ -80,10 +80,10 @@ export const ReceiptActionToolbar: React.FC<ReceiptActionToolbarProps> = ({
             onClick={onRefresh}
             disabled={refreshing}
             id="btn-refresh-receipt"
-            title="Muat Ulang Data Nota"
+            title="Reload Receipt Data"
           >
             <RotateCw className={`size-3.5 mr-1.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Perbarui
+            Refresh
           </Button>
         )}
 
@@ -97,12 +97,12 @@ export const ReceiptActionToolbar: React.FC<ReceiptActionToolbarProps> = ({
           {copied ? (
             <>
               <Check className="size-3.5 mr-1.5 text-emerald-600" />
-              Tersalin!
+              Copied!
             </>
           ) : (
             <>
               <Share2 className="size-3.5 mr-1.5" />
-              Salin Ringkasan
+              Copy Summary
             </>
           )}
         </Button>
@@ -116,7 +116,7 @@ export const ReceiptActionToolbar: React.FC<ReceiptActionToolbarProps> = ({
           className="font-semibold shadow-xs"
         >
           <Printer className="size-3.5 mr-1.5" />
-          Cetak Nota / PDF
+          Print Receipt / PDF
         </Button>
       </div>
     </div>

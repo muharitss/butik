@@ -30,9 +30,9 @@ function runReceiptSelfChecks() {
 
   // 3. Payment type label checks
   assert.equal(getPaymentTypeLabel('DP'), 'Down Payment (DP)');
-  assert.equal(getPaymentTypeLabel('PARTIAL'), 'Pembayaran Cicilan');
-  assert.equal(getPaymentTypeLabel('FINAL'), 'Pelunasan');
-  assert.equal(getPaymentTypeLabel('ADJUSTMENT'), 'Penyesuaian / Refund');
+  assert.equal(getPaymentTypeLabel('PARTIAL'), 'Installment / Partial');
+  assert.equal(getPaymentTypeLabel('FINAL'), 'Final Settlement');
+  assert.equal(getPaymentTypeLabel('ADJUSTMENT'), 'Adjustment / Refund');
   assert.equal(getPaymentTypeLabel('CUSTOM'), 'CUSTOM');
 
   // 4. Status mapping checks

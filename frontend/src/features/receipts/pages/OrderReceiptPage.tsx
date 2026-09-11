@@ -31,7 +31,7 @@ export const OrderReceiptPage: React.FC = () => {
     fetchOrderReceipt(id)
       .then((data) => setReceipt(data))
       .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Gagal memuat tanda terima nota')
+        setError(err instanceof Error ? err.message : 'Failed to load order receipt')
       )
       .finally(() => {
         setLoading(false);
@@ -47,7 +47,7 @@ export const OrderReceiptPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
         <Loader2 className="size-8 animate-spin mb-3 text-primary" />
-        <span className="text-sm font-medium">Menyiapkan format cetak nota...</span>
+        <span className="text-sm font-medium">Preparing receipt for printing...</span>
       </div>
     );
   }
@@ -57,14 +57,14 @@ export const OrderReceiptPage: React.FC = () => {
       <div className="space-y-4 max-w-md mx-auto py-16 print:hidden">
         <Alert variant="destructive">
           <AlertTriangle className="size-4" />
-          <AlertTitle>Nota Tidak Ditemukan</AlertTitle>
+          <AlertTitle>Receipt Not Found</AlertTitle>
           <AlertDescription>
-            {error || 'Pesanan yang diminta tidak ditemukan atau belum memiliki data tanda terima.'}
+            {error || 'The requested order was not found or does not have receipt data yet.'}
           </AlertDescription>
         </Alert>
         <div className="flex justify-center gap-2">
           <Link to="/orders" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-            <ArrowLeft className="size-3.5 mr-1.5" /> Kembali ke Daftar Pesanan
+            <ArrowLeft className="size-3.5 mr-1.5" /> Back to Orders
           </Link>
         </div>
       </div>

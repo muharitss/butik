@@ -87,7 +87,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
           <div className="sm:text-right space-y-1.5 shrink-0">
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Receipt className="size-3.5" />
-              <span>Tanda Terima / Nota</span>
+              <span>Official Receipt</span>
             </div>
             <div className="font-mono text-xl sm:text-2xl font-bold text-foreground tracking-tight">
               {receipt.orderNumber}
@@ -108,7 +108,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
           {/* Customer Details */}
           <div className="space-y-1 rounded-lg border border-border/60 bg-muted/20 p-3.5 print:bg-transparent print:border-border">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-              Pelanggan / Pemesan
+              Customer Information
             </span>
             <div className="flex items-center gap-1.5 font-semibold text-foreground text-sm pt-0.5">
               <User className="size-3.5 text-muted-foreground" />
@@ -131,18 +131,18 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
           {/* Order Metadata */}
           <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3.5 print:bg-transparent print:border-border">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-              Detail Pesanan
+              Order Details
             </span>
             <div className="grid grid-cols-2 gap-2 pt-0.5">
               <div>
-                <span className="text-muted-foreground block text-[11px]">Tanggal Masuk:</span>
+                <span className="text-muted-foreground block text-[11px]">Order Date:</span>
                 <span className="font-medium text-foreground flex items-center gap-1 mt-0.5">
                   <Calendar className="size-3 text-muted-foreground" />
                   {formatDate(receipt.orderDate)}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground block text-[11px]">Estimasi Selesai:</span>
+                <span className="text-muted-foreground block text-[11px]">Estimated Completion:</span>
                 <span className="font-semibold text-foreground flex items-center gap-1 mt-0.5">
                   <Clock className="size-3 text-muted-foreground" />
                   {formatDate(receipt.deadlineAt)}
@@ -155,16 +155,16 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
         {/* Itemized Garment List */}
         <div className="space-y-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Rincian Item Busana
+            Garment Line Items
           </h2>
           <div className="border border-border rounded-lg overflow-hidden">
             <Table>
               <TableHeader className="bg-muted/40 print:bg-transparent">
                 <TableRow className="border-border">
                   <TableHead className="w-10 text-center font-semibold text-xs">No</TableHead>
-                  <TableHead className="font-semibold text-xs">Jenis Busana & Spesifikasi</TableHead>
+                  <TableHead className="font-semibold text-xs">Item & Specifications</TableHead>
                   <TableHead className="text-center w-16 font-semibold text-xs">Qty</TableHead>
-                  <TableHead className="text-right w-28 font-semibold text-xs">Harga Satuan</TableHead>
+                  <TableHead className="text-right w-28 font-semibold text-xs">Unit Price</TableHead>
                   <TableHead className="text-right w-32 font-semibold text-xs">Subtotal</TableHead>
                 </TableRow>
               </TableHeader>
@@ -172,7 +172,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
                 {receipt.items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-4 text-muted-foreground text-xs">
-                      Tidak ada rincian item busana.
+                      No garment items listed.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -187,7 +187,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
                         </div>
                         {item.notes && (
                           <div className="text-[11px] text-muted-foreground italic mt-0.5">
-                            Catatan: {item.notes}
+                            Notes: {item.notes}
                           </div>
                         )}
                       </TableCell>
@@ -213,20 +213,20 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
           {/* Left Column: Recorded Payments History */}
           <div className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Riwayat Pembayaran
+              Payment History
             </h2>
             {receipt.paymentsSummary.payments.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                Belum ada transaksi pembayaran yang tercatat.
+                No payment transactions recorded yet.
               </div>
             ) : (
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader className="bg-muted/40 print:bg-transparent">
                     <TableRow className="border-border">
-                      <TableHead className="text-xs font-semibold">Jenis / Metode</TableHead>
-                      <TableHead className="text-xs font-semibold">Tanggal</TableHead>
-                      <TableHead className="text-right text-xs font-semibold">Jumlah</TableHead>
+                      <TableHead className="text-xs font-semibold">Type / Method</TableHead>
+                      <TableHead className="text-xs font-semibold">Date</TableHead>
+                      <TableHead className="text-right text-xs font-semibold">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -237,7 +237,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
                             {getPaymentTypeLabel(p.type)}
                           </div>
                           <div className="text-[10px] text-muted-foreground">
-                            {p.method ? `Metode: ${p.method}` : 'Tunai / Transfer'}
+                            {p.method ? `Method: ${p.method}` : 'Cash / Bank Transfer'}
                             {p.note ? ` • ${p.note}` : ''}
                           </div>
                         </TableCell>
@@ -258,11 +258,11 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
           {/* Right Column: Ledger Totals & Remaining Balance */}
           <div className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Ringkasan Tagihan
+              Payment Summary
             </h2>
             <div className="rounded-lg border border-border bg-card p-4 space-y-2 text-xs">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal Item</span>
+                <span>Items Subtotal</span>
                 <span className="font-mono text-foreground font-medium">
                   {formatCurrency(receipt.totals.subtotal)}
                 </span>
@@ -270,7 +270,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
 
               {hasAdditionalCost && (
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Biaya Tambahan</span>
+                  <span>Additional Cost</span>
                   <span className="font-mono text-foreground">
                     +{formatCurrency(receipt.totals.additionalCost)}
                   </span>
@@ -279,7 +279,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
 
               {hasExpressFee && (
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Biaya Kilat / Express</span>
+                  <span>Express Fee</span>
                   <span className="font-mono text-foreground">
                     +{formatCurrency(receipt.totals.expressFee)}
                   </span>
@@ -288,7 +288,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
 
               {hasDiscount && (
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Diskon Potongan</span>
+                  <span>Discount</span>
                   <span className="font-mono text-foreground">
                     -{formatCurrency(receipt.totals.discount)}
                   </span>
@@ -296,14 +296,14 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
               )}
 
               <div className="border-t border-border pt-2 flex justify-between items-center text-sm">
-                <span className="font-bold text-foreground">Total Pesanan</span>
+                <span className="font-bold text-foreground">Total Order</span>
                 <span className="font-mono font-bold text-base text-foreground">
                   {formatCurrency(receipt.totals.total)}
                 </span>
               </div>
 
               <div className="flex justify-between text-muted-foreground pt-1 border-t border-border/50">
-                <span>Total Sudah Dibayar</span>
+                <span>Total Paid</span>
                 <span className="font-mono text-foreground font-medium">
                   {formatCurrency(receipt.paymentsSummary.paidTotal)}
                 </span>
@@ -319,10 +319,10 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
               >
                 <div className="flex items-center gap-1.5 font-bold">
                   {isFullyPaid && <CheckCircle2 className="size-4 text-emerald-600" />}
-                  <span>{isFullyPaid ? 'Status Pelunasan' : 'Sisa Tagihan (Pelunasan)'}</span>
+                  <span>{isFullyPaid ? 'Settlement Status' : 'Remaining Balance'}</span>
                 </div>
                 <span className="font-mono font-bold text-base">
-                  {isFullyPaid ? 'LUNAS' : formatCurrency(receipt.paymentsSummary.remainingBalance)}
+                  {isFullyPaid ? 'PAID IN FULL' : formatCurrency(receipt.paymentsSummary.remainingBalance)}
                 </span>
               </div>
             </div>
@@ -334,7 +334,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
           <div className="rounded-lg border border-border/70 p-3 text-xs bg-muted/20 print:bg-transparent">
             <div className="flex items-center gap-1.5 font-semibold text-muted-foreground mb-1">
               <FileText className="size-3.5" />
-              <span>Instruksi / Catatan Tambahan</span>
+              <span>Special Instructions / Notes</span>
             </div>
             <p className="text-foreground whitespace-pre-wrap">{receipt.notes}</p>
           </div>
@@ -343,14 +343,14 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({ receipt }) => 
         {/* Receipt Policy & Footer */}
         <div className="border-t border-border pt-4 text-center space-y-1.5 text-[11px] text-muted-foreground">
           <p className="font-medium text-foreground">
-            Terima kasih atas kepercayaan Anda mempercayakan busana Anda kepada {receipt.boutique.name}.
+            Thank you for trusting your custom tailoring needs to {receipt.boutique.name}.
           </p>
           <p>
-            Harap simpan tanda terima ini sebagai bukti saat fitting dan pengambilan pakaian.
+            Please retain this receipt as proof for fitting sessions and garment collection.
           </p>
           <div className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/40 flex justify-between items-center">
             <span>JahitFlow Boutique OS</span>
-            <span>Waktu Cetak: {formatDateTime(receipt.generatedAt)}</span>
+            <span>Printed At: {formatDateTime(receipt.generatedAt)}</span>
           </div>
         </div>
       </CardContent>

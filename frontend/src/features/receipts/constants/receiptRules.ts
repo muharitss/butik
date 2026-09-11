@@ -38,11 +38,11 @@ export function getPaymentTypeLabel(type: string): string {
     case 'DP':
       return 'Down Payment (DP)';
     case 'PARTIAL':
-      return 'Pembayaran Cicilan';
+      return 'Installment / Partial';
     case 'FINAL':
-      return 'Pelunasan';
+      return 'Final Settlement';
     case 'ADJUSTMENT':
-      return 'Penyesuaian / Refund';
+      return 'Adjustment / Refund';
     default:
       return type;
   }
