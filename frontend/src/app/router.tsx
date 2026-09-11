@@ -18,6 +18,7 @@ import {
 import { RevisionsPage } from '../features/revisions/index.ts';
 import { PaymentsPage } from '../features/payments/index.ts';
 import { FittingsPage } from '../features/fittings/index.ts';
+import { CalendarPage } from '../features/calendar/index.ts';
 
 export const router = createBrowserRouter([
   {
@@ -62,14 +63,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'calendar',
-        element: (
-          <PlaceholderPage
-            title="Production Calendar"
-            icon="📅"
-            phase="Phase 8 (TASK-028)"
-            description="Visual timeline for fitting appointments, deadlines, and delivery schedules."
-          />
-        ),
+        element: <CalendarPage />,
       },
       {
         path: 'payments',

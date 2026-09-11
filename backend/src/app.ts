@@ -16,6 +16,7 @@ import { revisionRouter } from "./modules/revisions/index.js";
 import { attachmentRouter } from "./modules/attachments/index.js";
 import { auditRouter } from "./modules/audit/index.js";
 import { dashboardRouter } from "./modules/dashboard/index.js";
+import { calendarRouter } from "./modules/calendar/index.js";
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use("/api/orders/:orderId/revisions", revisionRouter);
 app.use("/api/orders/:orderId/attachments", attachmentRouter);
 app.use("/api/audit-logs", auditRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/calendar", calendarRouter);
 app.use("/api/orders", orderRouter);
 
 app.use(errorHandler);
