@@ -127,10 +127,12 @@ export const OrderListPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Bespoke Orders
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+              Bespoke Orders
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage custom tailoring orders, line items, status lifecycles, and delivery deadlines.
           </p>
         </div>

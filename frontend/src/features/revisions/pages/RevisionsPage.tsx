@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { buttonVariants } from '@/components/ui/button';
-import { Scissors, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export const RevisionsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -23,17 +23,22 @@ export const RevisionsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto py-12 text-center" id="revisions-hub-page">
-      <div className="p-8 border rounded-lg bg-card shadow-xs space-y-4">
-        <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-          <Scissors className="size-6" />
+    <div className="space-y-6 max-w-4xl mx-auto" id="revisions-hub-page">
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+            Garment Revisions & Alterations
+          </h1>
         </div>
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold text-foreground">Garment Revisions & Alterations</h2>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto">
-            Alterations and fit revisions are scoped to individual customer orders. Open an order from the list below to view or log alteration requests.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Alterations and fit revisions are scoped to individual customer orders.
+        </p>
+      </div>
+
+      <div className="p-8 border rounded-lg bg-card shadow-xs space-y-4 max-w-xl">
+        <p className="text-sm text-muted-foreground">
+          Buka pesanan dari daftar pesanan untuk melihat atau mencatat rincian revisi dan permak busana pelanggan.
+        </p>
 
         <div className="pt-2">
           <Link to="/orders" className={buttonVariants({ variant: 'default', size: 'sm' })}>

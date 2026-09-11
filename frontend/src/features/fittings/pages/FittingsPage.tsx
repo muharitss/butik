@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Ruler, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import type { Order } from '../../orders/types/orders.types.ts';
 import type { Fitting } from '../types/fittings.types.ts';
 import { fetchOrders } from '../../orders/api/orders.api.ts';
@@ -143,19 +143,14 @@ export const FittingsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Ruler className="size-5" />
-            </div>
-            <div>
-              <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Fittings & Alterations Hub
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Schedule client measurement trials, record trial outcomes, and track alterations.
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+              Fittings & Alterations Hub
+            </h1>
           </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Schedule client measurement trials, record trial outcomes, and track alterations.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

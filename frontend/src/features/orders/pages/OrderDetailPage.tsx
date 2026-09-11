@@ -121,7 +121,7 @@ export const OrderDetailPage: React.FC = () => {
           </Link>
 
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight font-mono">
               {order.orderNumber}
             </h1>
             <OrderStatusBadge status={order.status} />

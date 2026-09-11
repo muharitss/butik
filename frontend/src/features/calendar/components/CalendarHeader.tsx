@@ -8,8 +8,8 @@ import {
   List,
   Clock,
   Ruler,
-  CalendarDays,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge.tsx';
 import { formatMonthYear } from '../lib/calendar.utils.ts';
 import type { CalendarFilterType, CalendarViewMode } from '../types/calendar.types.ts';
 
@@ -52,13 +52,12 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl md:text-3xl font-heading font-bold tracking-tight text-foreground flex items-center gap-2">
-              <CalendarDays className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
               Production Calendar
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
+            <Badge variant="secondary" className="text-xs">
               {totalCount} {totalCount === 1 ? 'Event' : 'Events'}
-            </span>
+            </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Visual timeline of order deadlines and scheduled fitting appointments.

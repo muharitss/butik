@@ -275,10 +275,12 @@ export const OrderCreatePage: React.FC = () => {
         >
           <ArrowLeft className="size-3.5 mr-1" /> Back to Orders
         </Link>
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          New Bespoke Order
-        </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+            New Bespoke Order
+          </h1>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
           Select customer, configure custom garment items with measurement requirements, and set pricing.
         </p>
       </div>

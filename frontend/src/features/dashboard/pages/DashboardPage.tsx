@@ -7,8 +7,8 @@ import {
   Plus,
   AlertCircle,
   Clock,
-  Sparkles,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge.tsx';
 import { fetchDashboardSummary } from '../api/dashboard.api.ts';
 import type { DashboardSummaryResponse } from '../types/dashboard.types.ts';
 import { DashboardMetrics } from '../components/DashboardMetrics.tsx';
@@ -56,12 +56,12 @@ export const DashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl md:text-3xl font-heading font-bold tracking-tight text-foreground">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
               Atelier Dashboard
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium">
-              <Sparkles className="h-3 w-3" /> Live
-            </span>
+            <Badge variant="secondary" className="text-xs">
+              Live
+            </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Real-time business status of production, fittings, deliveries, and settlements.

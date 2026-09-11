@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, ExternalLink, Loader2, X } from 'lucide-react';
 import type { CustomerInput, PossibleDuplicate } from '../types/customers.types.ts';
@@ -160,10 +160,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading text-xl">
-            {isEditing ? 'Edit Customer Details' : 'New Customer Intake'}
-          </CardTitle>
-          <CardDescription>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+              {isEditing ? 'Edit Customer Details' : 'New Customer Intake'}
+            </h1>
+          </div>
+          <CardDescription className="text-sm text-muted-foreground mt-1">
             {isEditing
               ? 'Update contact details and tailor notes for this customer.'
               : 'Add a new client to the boutique directory.'}

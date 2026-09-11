@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
@@ -169,9 +169,9 @@ export const CustomerDetailPage: React.FC = () => {
               {customer.name.charAt(0).toUpperCase()}
             </div>
             <div className="space-y-1">
-              <CardTitle className="font-heading text-2xl font-bold">
+              <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
                 {customer.name}
-              </CardTitle>
+              </h1>
               <CardDescription className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="size-3.5" />

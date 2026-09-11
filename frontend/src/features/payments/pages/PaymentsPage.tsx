@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CreditCard, RotateCcw, Receipt } from 'lucide-react';
+import { RotateCcw, Receipt } from 'lucide-react';
 import type { Order } from '../../orders/types/orders.types.ts';
 import type { Payment } from '../types/payments.types.ts';
 import { fetchOrders } from '../../orders/api/orders.api.ts';
@@ -128,19 +128,14 @@ export const PaymentsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <CreditCard className="size-5" />
-            </div>
-            <div>
-              <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Payment & Receivables Ledger
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Overview of customer down payments, progress installments, and outstanding balances.
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+              Payment & Receivables Ledger
+            </h1>
           </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Overview of customer down payments, progress installments, and outstanding balances.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

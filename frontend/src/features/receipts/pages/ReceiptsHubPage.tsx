@@ -85,11 +85,12 @@ export const ReceiptsHubPage: React.FC = () => {
       {/* Header */}
       <div className="print:hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <Receipt className="size-6 text-primary" />
-            Tanda Terima & Nota
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+              Tanda Terima & Nota
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
             Pilih atau cari pesanan untuk mencetak nota pelanggan, bukti pembayaran, dan rincian item busana.
           </p>
         </div>

@@ -156,11 +156,11 @@ export const CustomerListPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
               Customer Directory
             </h1>
-            <Badge variant="secondary" className="font-sans font-medium text-xs">
+            <Badge variant="secondary" className="text-xs">
               {meta.totalItems} {meta.totalItems === 1 ? 'client' : 'clients'}
             </Badge>
           </div>
