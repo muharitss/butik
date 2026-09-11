@@ -11,6 +11,7 @@ import { garmentRouter } from "./modules/garments/index.js";
 import { measurementRouter } from "./modules/measurements/index.js";
 import { orderRouter } from "./modules/orders/index.js";
 import { paymentRouter } from "./modules/payments/index.js";
+import { fittingRouter } from "./modules/fittings/index.js";
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/customers/:customerId/measurements", measurementRouter);
 app.use("/api/customers", customerRouter);
 app.use("/api/garment-types", garmentRouter);
 app.use("/api/orders/:orderId/payments", paymentRouter);
+app.use("/api/orders/:orderId/fittings", fittingRouter);
 app.use("/api/orders", orderRouter);
 
 app.use(errorHandler);

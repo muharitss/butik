@@ -136,6 +136,7 @@ model Order {
   measurementSnapshots OrderMeasurementSnapshot[]
   statusHistories      OrderStatusHistory[]
   payments             Payment[]
+  fittings             Fitting[]
 
   @@index([customerId])
   @@index([deadlineAt])
@@ -222,5 +223,25 @@ model Payment {
 
   @@index([orderId])
   @@map("payments")
+}
+
+model Fitting {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId       String    @map("order_id") @db.Uuid
+  fittingNumber Int       @map("fitting_number")
+  status        String    @default("SCHEDULED")
+  scheduledAt   DateTime? @map("scheduled_at") @db.Timestamptz
+  occurredAt    DateTime? @map("occurred_at") @db.Timestamptz
+  result        String?
+  notes         String?
+  nextAction    String?   @map("next_action")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, fittingNumber])
+  @@index([orderId])
+  @@map("fittings")
 }
 

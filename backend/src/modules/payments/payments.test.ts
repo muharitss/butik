@@ -33,6 +33,9 @@ test("Payment Schema & API integration tests", async (t) => {
 
     // Clean up created payments, orders, and associated data
     if (createdOrderIds.length > 0) {
+      await prisma.fitting.deleteMany({
+        where: { orderId: { in: createdOrderIds } }
+      });
       await prisma.payment.deleteMany({
         where: { orderId: { in: createdOrderIds } }
       });

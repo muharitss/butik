@@ -576,6 +576,9 @@ export async function getOrderById(
       },
       payments: {
         orderBy: { recordedAt: "desc" }
+      },
+      fittings: {
+        orderBy: { fittingNumber: "asc" }
       }
     }
   });
@@ -603,7 +606,7 @@ export async function getOrderById(
     measurementSnapshot: activeSnapshot,
     paymentsSummary,
     payments: order.payments,
-    fittings: [],
+    fittings: order.fittings,
     revisions: [],
     attachments: []
   };
