@@ -24,6 +24,7 @@ import {
   Loader2,
   AlertTriangle,
 } from 'lucide-react';
+import { usePermission } from '../../../hooks/usePermission.ts';
 import { fetchCustomer, deleteCustomer } from '../api/customers.api.ts';
 import { OrderHistorySection } from '../components/OrderHistorySection.tsx';
 import { CustomerMeasurementsSection } from '../../measurements/index.ts';
@@ -32,8 +33,10 @@ import type { Customer } from '../types/customers.types.ts';
 export const CustomerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const canDeleteCustomer = usePermission('customers:delete');
 
   const [customer, setCustomer] = useState<Customer | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,17 +152,20 @@ export const CustomerDetailPage: React.FC = () => {
             <Pencil className="size-3.5 mr-1.5" />
             Edit Customer
           </Link>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setDeleteOpen(true)}
-            id="btn-delete-customer"
-          >
-            <Trash2 className="size-3.5 mr-1.5" />
-            Delete
-          </Button>
+          {canDeleteCustomer && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setDeleteOpen(true)}
+              id="btn-delete-customer"
+            >
+              <Trash2 className="size-3.5 mr-1.5" />
+              Delete
+            </Button>
+          )}
         </div>
       </div>
+
 
       {/* Customer Header Summary Card */}
       <Card>

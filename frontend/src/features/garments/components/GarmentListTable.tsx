@@ -33,6 +33,7 @@ interface GarmentListTableProps {
   onDeactivate: (garment: GarmentType) => void;
   onReactivate: (garment: GarmentType) => void;
   actionLoading?: boolean;
+  canManage?: boolean;
 }
 
 const formatDate = (isoString?: string | null) => {
@@ -55,7 +56,9 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
   onDeactivate,
   onReactivate,
   actionLoading = false,
+  canManage = false,
 }) => {
+
   if (garments.length === 0) {
     return null;
   }
@@ -213,35 +216,40 @@ export const GarmentListTable: React.FC<GarmentListTableProps> = ({
                           <Eye className="size-3.5 mr-2 text-muted-foreground" />
                           <span>View Details</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onEdit(item)}
-                          className="cursor-pointer"
-                        >
-                          <Pencil className="size-3.5 mr-2 text-muted-foreground" />
-                          <span>Edit Garment Type</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {item.isActive ? (
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => onDeactivate(item)}
-                            disabled={actionLoading}
-                            className="cursor-pointer"
-                          >
-                            <XCircle className="size-3.5 mr-2" />
-                            <span>Deactivate</span>
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            onClick={() => onReactivate(item)}
-                            disabled={actionLoading}
-                            className="cursor-pointer"
-                          >
-                            <CheckCircle2 className="size-3.5 mr-2 text-muted-foreground" />
-                            <span>Reactivate</span>
-                          </DropdownMenuItem>
+                        {canManage && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => onEdit(item)}
+                              className="cursor-pointer"
+                            >
+                              <Pencil className="size-3.5 mr-2 text-muted-foreground" />
+                              <span>Edit Garment Type</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {item.isActive ? (
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => onDeactivate(item)}
+                                disabled={actionLoading}
+                                className="cursor-pointer"
+                              >
+                                <XCircle className="size-3.5 mr-2" />
+                                <span>Deactivate</span>
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => onReactivate(item)}
+                                disabled={actionLoading}
+                                className="cursor-pointer"
+                              >
+                                <CheckCircle2 className="size-3.5 mr-2 text-muted-foreground" />
+                                <span>Reactivate</span>
+                              </DropdownMenuItem>
+                            )}
+                          </>
                         )}
                       </DropdownMenuContent>
+
                     </DropdownMenu>
                   </div>
                 </TableCell>

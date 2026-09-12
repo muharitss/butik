@@ -37,6 +37,7 @@ interface GarmentDetailDialogProps {
   onDeactivate: (garment: GarmentType) => void;
   onReactivate: (garment: GarmentType) => void;
   actionLoading?: boolean;
+  canManage?: boolean;
 }
 
 const formatDate = (isoString?: string | null) => {
@@ -60,6 +61,7 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
   onDeactivate,
   onReactivate,
   actionLoading = false,
+  canManage = false,
 }) => {
   if (!garment) return null;
 
@@ -173,18 +175,20 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
                 <p className="text-xs text-muted-foreground">
                   This garment type has no measurement fields configured yet.
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs mt-2"
-                  onClick={() => {
-                    onOpenChange(false);
-                    onEdit(garment);
-                  }}
-                >
-                  <Pencil className="size-3.5 mr-1" />
-                  Configure Measurement Fields
-                </Button>
+                {canManage && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs mt-2"
+                    onClick={() => {
+                      onOpenChange(false);
+                      onEdit(garment);
+                    }}
+                  >
+                    <Pencil className="size-3.5 mr-1" />
+                    Configure Measurement Fields
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="rounded-md border border-border overflow-hidden">
@@ -236,33 +240,35 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
         {/* Footer */}
         <DialogFooter className="p-4 border-t border-border bg-card/60 flex-row justify-between items-center gap-2 sm:justify-between">
           <div>
-            {garment.isActive ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => {
-                  onOpenChange(false);
-                  onDeactivate(garment);
-                }}
-                disabled={actionLoading}
-              >
-                Deactivate Garment
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="text-xs"
-                onClick={() => {
-                  onReactivate(garment);
-                }}
-                disabled={actionLoading}
-              >
-                Reactivate
-              </Button>
+            {canManage && (
+              garment.isActive ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onDeactivate(garment);
+                  }}
+                  disabled={actionLoading}
+                >
+                  Deactivate Garment
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => {
+                    onReactivate(garment);
+                  }}
+                  disabled={actionLoading}
+                >
+                  Reactivate
+                </Button>
+              )
             )}
           </div>
 
@@ -276,18 +282,20 @@ export const GarmentDetailDialog: React.FC<GarmentDetailDialogProps> = ({
             >
               Close
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="text-xs"
-              onClick={() => {
-                onOpenChange(false);
-                onEdit(garment);
-              }}
-            >
-              <Pencil className="size-3.5 mr-1" />
-              Edit Garment Type
-            </Button>
+            {canManage && (
+              <Button
+                type="button"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  onOpenChange(false);
+                  onEdit(garment);
+                }}
+              >
+                <Pencil className="size-3.5 mr-1" />
+                Edit Garment Type
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/apiClient.ts';
+import { useAuth } from './AuthContext.tsx';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +17,12 @@ import {
   Menu,
   RotateCw,
   Sparkles,
+  User as UserIcon,
+  LogOut,
+  ShieldCheck,
+  Settings,
 } from 'lucide-react';
+import { hasPermission } from '../hooks/usePermission.ts';
 
 interface HealthStatus {
   loading: boolean;
@@ -24,7 +30,15 @@ interface HealthStatus {
   statusText: string;
 }
 
-const navItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  id: string;
+  permission?: string;
+}
+
+const navItems: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, id: 'nav-dashboard' },
   { path: '/orders', label: 'Orders', icon: ClipboardList, id: 'nav-orders' },
   { path: '/customers', label: 'Customers', icon: Users, id: 'nav-customers' },
@@ -34,7 +48,10 @@ const navItems = [
   { path: '/fittings', label: 'Fittings', icon: Ruler, id: 'nav-fittings' },
   { path: '/revisions', label: 'Revisions', icon: RotateCcw, id: 'nav-revisions' },
   { path: '/receipts', label: 'Receipts', icon: Receipt, id: 'nav-receipts' },
+  { path: '/audit-logs', label: 'Audit Logs', icon: ShieldCheck, id: 'nav-audit-logs', permission: 'audit:view' },
+  { path: '/settings', label: 'Settings', icon: Settings, id: 'nav-settings', permission: 'settings:manage' },
 ];
+
 
 export const AppShell: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,7 +61,17 @@ export const AppShell: React.FC = () => {
     statusText: 'Checking...',
   });
 
+  const { currentUser, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      navigate('/login');
+    }
+  };
 
   const checkHealth = async () => {
     setHealth((prev) => ({ ...prev, loading: true }));
@@ -73,7 +100,11 @@ export const AppShell: React.FC = () => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  const currentNav = navItems.find((item) =>
+  const visibleNavItems = navItems.filter(
+    (item) => !item.permission || hasPermission(currentUser?.role, item.permission)
+  );
+
+  const currentNav = visibleNavItems.find((item) =>
     item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
   );
 
@@ -115,7 +146,7 @@ export const AppShell: React.FC = () => {
           <div className="nav-section-title px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Workspace
           </div>
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -138,11 +169,45 @@ export const AppShell: React.FC = () => {
           })}
         </nav>
 
-        {/* Footer / Health Status */}
-        <div className="sidebar-footer p-3 border-t border-sidebar-border">
-          <div className="backend-health-card rounded-md border border-sidebar-border bg-card/50 p-2.5 text-xs">
-            <div className="health-row flex items-center justify-between pb-1.5 border-b border-border/40 mb-1.5">
-              <span className="health-label text-[11px] font-medium text-muted-foreground">
+
+        {/* Footer / User Profile & Health Status */}
+        <div className="sidebar-footer p-3 border-t border-sidebar-border space-y-2">
+          {/* User Profile Card */}
+          <div
+            id="sidebar-user-card"
+            className="user-profile-card flex items-center justify-between gap-2 p-2 rounded-md border border-sidebar-border bg-card/60 text-xs"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <UserIcon className="size-3.5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-foreground text-xs truncate" id="sidebar-user-name">
+                  {currentUser?.name || 'Operator'}
+                </div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider truncate" id="sidebar-user-role">
+                  {currentUser?.role || 'Staff'}
+                </div>
+              </div>
+            </div>
+            <Button
+              type="button"
+              id="btn-sidebar-logout"
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleLogout}
+              title="Sign out"
+              aria-label="Sign out"
+              className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+            >
+              <LogOut className="size-3.5" />
+            </Button>
+          </div>
+
+          {/* Backend Health Card */}
+          <div className="backend-health-card rounded-md border border-sidebar-border bg-card/50 p-2 text-xs">
+            <div className="health-row flex items-center justify-between pb-1 border-b border-border/40 mb-1">
+              <span className="health-label text-[10px] font-medium text-muted-foreground">
                 Backend API
               </span>
               <Button
@@ -153,14 +218,14 @@ export const AppShell: React.FC = () => {
                 onClick={checkHealth}
                 title="Recheck backend health"
                 aria-label="Recheck backend health"
-                className="health-refresh-btn h-5 w-5 text-muted-foreground hover:text-foreground"
+                className="health-refresh-btn h-4 w-4 text-muted-foreground hover:text-foreground"
               >
-                <RotateCw className={`size-3 ${health.loading ? 'animate-spin' : ''}`} />
+                <RotateCw className={`size-2.5 ${health.loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
-            <div className="health-indicator-container flex items-center gap-2">
+            <div className="health-indicator-container flex items-center gap-1.5">
               <span
-                className={`status-dot size-2 shrink-0 rounded-full ${
+                className={`status-dot size-1.5 shrink-0 rounded-full ${
                   health.loading
                     ? 'bg-muted-foreground animate-pulse'
                     : health.online
@@ -169,7 +234,7 @@ export const AppShell: React.FC = () => {
                 }`}
                 aria-hidden="true"
               />
-              <span className="health-status-text text-[11px] text-muted-foreground truncate">
+              <span className="health-status-text text-[10px] text-muted-foreground truncate">
                 {health.loading ? 'Checking...' : health.online ? 'Online (status: ok)' : 'Offline'}
               </span>
             </div>
@@ -206,7 +271,29 @@ export const AppShell: React.FC = () => {
           </div>
 
           <div className="header-actions flex items-center gap-2 shrink-0">
-            <Badge variant="outline" className="version-tag text-[10px] font-normal">
+            {currentUser && (
+              <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground mr-1" id="header-user-info">
+                <span className="font-medium text-foreground" id="header-user-name">
+                  {currentUser.name}
+                </span>
+                <Badge variant="secondary" className="text-[10px] py-0 h-4">
+                  {currentUser.role}
+                </Badge>
+              </div>
+            )}
+            <Button
+              type="button"
+              id="btn-header-logout"
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-xs h-7 gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/40"
+              title="Sign out"
+            >
+              <LogOut className="size-3.5" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+            <Badge variant="outline" className="version-tag text-[10px] font-normal hidden md:inline-flex">
               MVP v0.1
             </Badge>
           </div>

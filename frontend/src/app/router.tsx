@@ -1,5 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './AppShell.tsx';
+import { ProtectedRoute } from './ProtectedRoute.tsx';
+import { LoginPage } from '../features/auth/index.ts';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import { PlaceholderPage } from './pages/PlaceholderPage.tsx';
 
@@ -23,8 +25,16 @@ import { ReceiptsHubPage, OrderReceiptPage } from '../features/receipts/index.ts
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
     path: '/',
-    element: <AppShell />,
+    element: (
+      <ProtectedRoute>
+        <AppShell />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -87,6 +97,28 @@ export const router = createBrowserRouter([
         element: <ReceiptsHubPage />,
       },
       {
+        path: 'audit-logs',
+        element: (
+          <PlaceholderPage
+            title="Audit Logs"
+            icon="🛡️"
+            phase="Phase 3 (TASK-039)"
+            description="System activity audit logs and operator traceability."
+          />
+        ),
+      },
+      {
+        path: 'settings',
+        element: (
+          <PlaceholderPage
+            title="Boutique Settings"
+            icon="⚙️"
+            phase="Phase 3 (TASK-036)"
+            description="Configure boutique profile, pricing defaults, and operational parameters."
+          />
+        ),
+      },
+      {
         path: '*',
         element: (
           <PlaceholderPage
@@ -98,5 +130,6 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+
   },
 ]);

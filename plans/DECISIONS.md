@@ -93,4 +93,14 @@ Each entry: **Decision**, **Context**, **Alternatives Considered**, **Consequenc
   - (c) Using `name` instead of `email` as login identifier: names are prone to duplicates, typos, and spaces; email provides a standardized unique handle.
 **Consequences:** Frontend must include credentials in CORS requests (`credentials: "include"`). API handlers rely exclusively on `req.actorId` populated from the verified token. Password hashes are never logged, serialized, or returned in any API response.
 
+## D-016: Role-Based Access Control (RBAC) Strategy
+**Decision:** Role-based access control is implemented using a pure in-memory permission map (`Record<string, readonly string[]>`) mapping permission identifiers to allowed roles (`owner`, `staff`), a composable backend `authorize(permission)` middleware factory that returns a standard `403 FORBIDDEN` error envelope, and a frontend `usePermission(permission)` hook derived from `currentUser.role`.
+**Context:** Two roles exist in JahitFlow: `owner` (boutique proprietor with full administrative authority) and `staff` (operational tailors/operators handling customer interactions and orders). Sensitive operations (customer deletion, garment catalog configuration, audit log inspection, user management, boutique settings, financial reports) must be restricted to `owner`.
+**Alternatives considered:**
+  - (a) Dynamic DB-backed permission tables and role-permission junction tables: premature abstraction and unnecessary database read latency for a two-role boutique system (violates YAGNI).
+  - (b) Hardcoded `req.userRole === "owner"` inline checks inside handler functions: entangles authorization with domain logic and leaks role assumptions across routers.
+  - (c) Full client-side route blocking guards: introduces redundant client-side routing state; action-level hiding paired with authoritative server-side 403 enforcement ensures no data leakage and a single source of truth.
+**Consequences:** Zero database queries required for authorization checks. Clean composability at the route definition layer (`router.delete("/:id", authorize("customers:delete"), handler)`). Unauthorized requests immediately receive `403 FORBIDDEN` without invoking parameter validation or database queries.
+
+
 

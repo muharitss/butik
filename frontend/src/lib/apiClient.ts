@@ -7,6 +7,14 @@ import {
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   rawEnvelope?: boolean;
+  skipAuthInterceptor?: boolean;
+}
+
+type UnauthorizedCallback = () => void;
+let globalUnauthorizedCallback: UnauthorizedCallback | null = null;
+
+export function setOnUnauthorizedCallback(cb: UnauthorizedCallback | null) {
+  globalUnauthorizedCallback = cb;
 }
 
 export function createApiClient(customBaseUrl?: string) {
@@ -29,6 +37,7 @@ export function createApiClient(customBaseUrl?: string) {
     }
 
     const config: RequestInit = {
+      credentials: options.credentials ?? 'include',
       ...options,
       headers,
       body:
@@ -62,6 +71,11 @@ export function createApiClient(customBaseUrl?: string) {
       }
     } else {
       payload = await response.text();
+    }
+
+    // Intercept 401 Unauthorized unless explicitly skipped (e.g. login attempt)
+    if (response.status === 401 && !options.skipAuthInterceptor && globalUnauthorizedCallback) {
+      globalUnauthorizedCallback();
     }
 
     // Check for API error response envelope: { error: { code, message, details? } }
@@ -99,6 +113,9 @@ export function createApiClient(customBaseUrl?: string) {
 
   return {
     baseUrl: normalizedBase,
+    setOnUnauthorized(cb: UnauthorizedCallback | null): void {
+      globalUnauthorizedCallback = cb;
+    },
     request,
     get<T>(endpoint: string, options?: Omit<RequestOptions, 'body'>): Promise<T> {
       return request<T>(endpoint, { ...options, method: 'GET' });

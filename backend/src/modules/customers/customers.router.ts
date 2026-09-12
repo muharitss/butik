@@ -4,6 +4,7 @@ import {
   validateBody,
   validateParams
 } from "../../shared/validation/index.js";
+import { authorize } from "../../shared/auth/index.js";
 import {
   customerIdParamSchema,
   customerQuerySchema,
@@ -29,7 +30,14 @@ customerRouter.patch(
   validateBody(updateCustomerSchema),
   updateCustomer
 );
-customerRouter.delete("/:id", validateParams(customerIdParamSchema), deleteCustomer);
+customerRouter.delete(
+  "/:id",
+  authorize("customers:delete"),
+  validateParams(customerIdParamSchema),
+  deleteCustomer
+);
+
 
 export { customerRouter };
 export default customerRouter;
+

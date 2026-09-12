@@ -133,6 +133,36 @@ async function runSelfChecks() {
       assert.equal(err.statusCode, 0);
     }
 
+    // 6. 401 Unauthorized interception
+    let unauthorizedTriggered = 0;
+    client.setOnUnauthorized(() => {
+      unauthorizedTriggered++;
+    });
+
+    globalThis.fetch = async () => {
+      return new Response(JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Auth required' } }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+
+    try {
+      await client.get('/protected');
+    } catch {
+      // Expected
+    }
+    assert.equal(unauthorizedTriggered, 1, 'Should trigger unauthorized callback on 401');
+
+    // 7. 401 with skipAuthInterceptor should not trigger callback
+    try {
+      await client.get('/public-or-login', { skipAuthInterceptor: true });
+    } catch {
+      // Expected
+    }
+    assert.equal(unauthorizedTriggered, 1, 'Should not trigger callback when skipAuthInterceptor is true');
+
+    client.setOnUnauthorized(null);
+
     console.log('✓ All apiClient self-checks passed successfully!');
   } finally {
     globalThis.fetch = originalFetch;

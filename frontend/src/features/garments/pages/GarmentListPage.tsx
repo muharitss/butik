@@ -31,8 +31,10 @@ import {
 import { GarmentFormDialog } from '../components/GarmentFormDialog.tsx';
 import { GarmentListTable } from '../components/GarmentListTable.tsx';
 import { GarmentDetailDialog } from '../components/GarmentDetailDialog.tsx';
+import { usePermission } from '../../../hooks/usePermission.ts';
 
 export const GarmentListPage: React.FC = () => {
+  const canManageGarments = usePermission('garments:manage');
   const [garments, setGarments] = useState<GarmentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,9 +209,11 @@ export const GarmentListPage: React.FC = () => {
             )}
           </Button>
 
-          <Button onClick={handleOpenCreate} size="sm" className="text-xs">
-            <Plus className="size-4 mr-1.5" /> Add Garment Type
-          </Button>
+          {canManageGarments && (
+            <Button onClick={handleOpenCreate} size="sm" className="text-xs">
+              <Plus className="size-4 mr-1.5" /> Add Garment Type
+            </Button>
+          )}
         </div>
       </div>
 
@@ -255,7 +259,7 @@ export const GarmentListPage: React.FC = () => {
                 ? `No garment types found matching "${searchQuery}". Try another search term.`
                 : 'Start by adding your first garment type to define clothing styles and measurement specifications.'}
             </p>
-            {!searchQuery && (
+            {!searchQuery && canManageGarments && (
               <Button onClick={handleOpenCreate} size="sm" className="text-xs">
                 <Plus className="size-3.5 mr-1" /> Add New Garment Type
               </Button>
@@ -270,6 +274,7 @@ export const GarmentListPage: React.FC = () => {
           onDeactivate={setGarmentToDeactivate}
           onReactivate={handleReactivate}
           actionLoading={actionLoading}
+          canManage={canManageGarments}
         />
       )}
 
@@ -282,6 +287,7 @@ export const GarmentListPage: React.FC = () => {
         onDeactivate={setGarmentToDeactivate}
         onReactivate={handleReactivate}
         actionLoading={actionLoading}
+        canManage={canManageGarments}
       />
 
       {/* Form Dialog for Create & Edit */}

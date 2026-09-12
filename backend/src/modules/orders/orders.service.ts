@@ -69,7 +69,24 @@ export async function getNextOrderNumber(
     FOR UPDATE
   `;
 
-  const nextValue = Number(rows[0]?.last_value ?? 0) + 1;
+  let currentValue = Number(rows[0]?.last_value ?? 0);
+
+  // Synchronize counter if uninitialized or behind seeded/existing orders for the year
+  if (currentValue === 0) {
+    const maxOrder = await tx.order.findFirst({
+      where: { orderNumber: { startsWith: `JF-${year}-` } },
+      orderBy: { orderNumber: "desc" },
+      select: { orderNumber: true }
+    });
+    if (maxOrder) {
+      const match = maxOrder.orderNumber.match(new RegExp(`^JF-${year}-(\\d+)$`));
+      if (match) {
+        currentValue = Math.max(currentValue, parseInt(match[1], 10));
+      }
+    }
+  }
+
+  const nextValue = currentValue + 1;
 
   await tx.$executeRaw`
     UPDATE order_number_counters
@@ -80,6 +97,7 @@ export async function getNextOrderNumber(
   const sequenceFormatted = String(nextValue).padStart(3, "0");
   return `JF-${year}-${sequenceFormatted}`;
 }
+
 
 /**
  * Computes individual item subtotals and the overall order subtotal and total using decimal arithmetic.

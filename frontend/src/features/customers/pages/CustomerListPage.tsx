@@ -44,10 +44,12 @@ import {
   AlertTriangle,
   Users,
 } from 'lucide-react';
+import { usePermission } from '../../../hooks/usePermission.ts';
 import { fetchCustomers, deleteCustomer } from '../api/customers.api.ts';
 import type { Customer, PaginationMeta } from '../types/customers.types.ts';
 
 export const CustomerListPage: React.FC = () => {
+  const canDeleteCustomer = usePermission('customers:delete');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({
     page: 1,
@@ -348,19 +350,21 @@ export const CustomerListPage: React.FC = () => {
                           <Pencil className="size-3.5" />
                           <span className="sr-only">Edit {c.name}</span>
                         </Link>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => {
-                            setDeleteError(null);
-                            setCustomerToDelete(c);
-                          }}
-                          title="Delete Customer"
-                        >
-                          <Trash2 className="size-3.5" />
-                          <span className="sr-only">Delete {c.name}</span>
-                        </Button>
+                        {canDeleteCustomer && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => {
+                              setDeleteError(null);
+                              setCustomerToDelete(c);
+                            }}
+                            title="Delete Customer"
+                          >
+                            <Trash2 className="size-3.5" />
+                            <span className="sr-only">Delete {c.name}</span>
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -434,17 +438,19 @@ export const CustomerListPage: React.FC = () => {
                     <Pencil className="size-3 mr-1" />
                     Edit
                   </Link>
-                  <Button
-                    variant="destructive"
-                    size="xs"
-                    onClick={() => {
-                      setDeleteError(null);
-                      setCustomerToDelete(c);
-                    }}
-                  >
-                    <Trash2 className="size-3 mr-1" />
-                    Delete
-                  </Button>
+                  {canDeleteCustomer && (
+                    <Button
+                      variant="destructive"
+                      size="xs"
+                      onClick={() => {
+                        setDeleteError(null);
+                        setCustomerToDelete(c);
+                      }}
+                    >
+                      <Trash2 className="size-3 mr-1" />
+                      Delete
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))}

@@ -14,7 +14,7 @@
   ```
 - Pagination (list endpoints): query params `page` (default 1), `pageSize` (default 20, max 100); response `meta: { page, pageSize, total }`.
 - Filtering/search: query params specific to each resource, documented per endpoint group below.
-- Authorization: enforced via HttpOnly, Secure (production), SameSite=Strict session cookie containing a short-lived JWT (see `DECISIONS.md#D-015`). Public routes are strictly limited to `GET /api/health` and `POST /api/auth/login`. All other routes require authentication and populate `req.actorId`.
+- Authorization: enforced via HttpOnly, Secure (production), SameSite=Strict session cookie containing a short-lived JWT (see `DECISIONS.md#D-015`, `D-016`). Public routes are strictly limited to `GET /api/health` and `POST /api/auth/login`. All other routes require authentication and populate `req.actorId` and `req.userRole`. Sensitive endpoints are guarded by `authorize(permission)` and restricted to allowed roles (primarily `owner`).
 - All mutating endpoints wrap their multi-table writes in a transaction (see `ARCHITECTURE.md#3.4`).
 
 ## Error Behavior
@@ -23,6 +23,7 @@
 |---|---|---|
 | Request body fails schema validation | 400 | `VALIDATION_ERROR` |
 | Unauthenticated or invalid/expired session token | 401 | `UNAUTHORIZED` |
+| Insufficient role permissions for sensitive endpoint | 403 | `FORBIDDEN` |
 | Business-rule violation (e.g., illegal status transition, overpayment) | 409 | `BUSINESS_RULE_VIOLATION` |
 | Referenced entity not found | 404 | `NOT_FOUND` |
 | Referenced entity exists but is soft-deleted/inactive where an active one is required | 409 | `CONFLICT` |
@@ -34,22 +35,23 @@ Validation is always enforced server-side regardless of what the frontend alread
 ## Endpoint Groups
 
 ### Authentication (`/api/auth`)
-- `POST /api/auth/login` — authenticate with `{ email, password }`. On success, sets `HttpOnly`, `SameSite=Strict` session cookie (`jahitflow_session`) and returns `{ data: { id, name, role } }`. Rate-limited to 10 attempts per 15 min per IP. Returns generic 401 for unknown email, wrong password, or inactive user.
-- `POST /api/auth/logout` — clears session cookie, returns `{ data: { loggedOut: true } }`.
-- `GET /api/auth/me` — returns authenticated user profile `{ data: { id, name, email, role, isActive } }`. `passwordHash` is never exposed. Returns 401 if unauthenticated.
+- `POST /api/auth/login` — authenticate with `{ email, password }` (Public). On success, sets `HttpOnly`, `SameSite=Strict` session cookie (`jahitflow_session`) and returns `{ data: { id, name, role } }`. Rate-limited to 10 attempts per 15 min per IP. Returns generic 401 for unknown email, wrong password, or inactive user.
+- `POST /api/auth/logout` — clears session cookie, returns `{ data: { loggedOut: true } }` (Authenticated: `owner`, `staff`).
+- `GET /api/auth/me` — returns authenticated user profile `{ data: { id, name, email, role, isActive } }` (Authenticated: `owner`, `staff`). `passwordHash` is never exposed. Returns 401 if unauthenticated.
 
 ### Customers (`/api/customers`)
-- `GET /api/customers` — list/search. Query: `q` (matches name/phone), `page`, `pageSize`.
-- `GET /api/customers/:id` — detail, including order history summary.
-- `POST /api/customers` — create.
-- `PATCH /api/customers/:id` — update contact info/notes.
-- `DELETE /api/customers/:id` — soft delete (blocked if active orders exist, per `BUSINESS-RULES.md`).
+- `GET /api/customers` — list/search. Query: `q` (matches name/phone), `page`, `pageSize` (Authenticated: `owner`, `staff`).
+- `GET /api/customers/:id` — detail, including order history summary (Authenticated: `owner`, `staff`).
+- `POST /api/customers` — create (Authenticated: `owner`, `staff`).
+- `PATCH /api/customers/:id` — update contact info/notes (Authenticated: `owner`, `staff`).
+- `DELETE /api/customers/:id` — soft delete (`owner` only, permission `customers:delete`; returns 403 `FORBIDDEN` for `staff`; blocked if active orders exist, per `BUSINESS-RULES.md`).
 
 ### Garment Types (`/api/garment-types`)
-- `GET /api/garment-types` — list (query `includeInactive=true` to include inactive).
-- `POST /api/garment-types` — create, with nested `measurementFields[]`.
-- `PATCH /api/garment-types/:id` — update fields, including replacing `measurementFields[]`.
-- `PATCH /api/garment-types/:id/deactivate` — set `is_active=false` (soft-delete equivalent; used instead of DELETE since garment types are referenced by historical order items).
+- `GET /api/garment-types` — list (query `includeInactive=true` to include inactive) (Authenticated: `owner`, `staff`).
+- `POST /api/garment-types` — create, with nested `measurementFields[]` (`owner` only, permission `garments:manage`; returns 403 `FORBIDDEN` for `staff`).
+- `PATCH /api/garment-types/:id` — update fields, including replacing `measurementFields[]` (`owner` only, permission `garments:manage`; returns 403 `FORBIDDEN` for `staff`).
+- `PATCH /api/garment-types/:id/deactivate` — set `is_active=false` (soft-delete equivalent; `owner` only, permission `garments:manage`; returns 403 `FORBIDDEN` for `staff`).
+
 
 ### Measurements (`/api/customers/:customerId/measurements`)
 - `GET /api/customers/:customerId/measurements` — version history, newest first.
@@ -98,7 +100,8 @@ Validation is always enforced server-side regardless of what the frontend alread
 - `GET /api/orders/:orderId/whatsapp-link?template=confirmation|ready|payment_reminder` — returns `{ url: "https://wa.me/..." }` built from the customer's phone and a filled-in message template. Purely a formatting endpoint; no external call is made.
 
 ### Audit (`/api/audit-logs`)
-- `GET /api/audit-logs` — query `entityType`, `entityId`, `from`, `to`, `page`, `pageSize` — for operator/investigative review. Read-only.
+- `GET /api/audit-logs` — query `entityType`, `entityId`, `from`, `to`, `page`, `pageSize` — for operator/investigative review. Read-only (`owner` only, permission `audit:view`; returns 403 `FORBIDDEN` for `staff`).
+
 
 ## Transaction Boundaries Summary
 
