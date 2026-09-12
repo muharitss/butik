@@ -75,7 +75,10 @@ export async function createMeasurement(
     const { customerId } = req.params as unknown as CustomerIdParam;
     const body = req.body as CreateMeasurementVersionInput;
 
-    const created = await createMeasurementVersion(customerId, body);
+    const created = await createMeasurementVersion(customerId, {
+      ...body,
+      createdBy: body.createdBy ?? req.actorId ?? null
+    });
     sendSuccess(res, created, undefined, 201);
   } catch (err) {
     next(err);

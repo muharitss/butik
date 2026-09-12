@@ -65,10 +65,7 @@ export async function createAttachmentHandler(
   try {
     const { orderId } = req.params as unknown as OrderIdParam;
     const body = req.body as CreateAttachmentInput;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     if (!isValidPublicIdForOrder(body.cloudinaryPublicId, orderId)) {
       throw new BusinessRuleViolationError(
@@ -178,10 +175,7 @@ export async function deleteAttachmentHandler(
 ): Promise<void> {
   try {
     const { orderId, id } = req.params as unknown as AttachmentIdParam;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const order = await prisma.order.findUnique({
       where: { id: orderId }

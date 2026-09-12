@@ -14,7 +14,7 @@
   ```
 - Pagination (list endpoints): query params `page` (default 1), `pageSize` (default 20, max 100); response `meta: { page, pageSize, total }`.
 - Filtering/search: query params specific to each resource, documented per endpoint group below.
-- Authorization: none enforced in MVP (see `DECISIONS.md#D-002`); all endpoints are open. Endpoints are still written to accept an implicit "system actor" for audit purposes, so adding real auth later only changes how the actor is resolved, not the endpoint signatures.
+- Authorization: enforced via HttpOnly, Secure (production), SameSite=Strict session cookie containing a short-lived JWT (see `DECISIONS.md#D-015`). Public routes are strictly limited to `GET /api/health` and `POST /api/auth/login`. All other routes require authentication and populate `req.actorId`.
 - All mutating endpoints wrap their multi-table writes in a transaction (see `ARCHITECTURE.md#3.4`).
 
 ## Error Behavior
@@ -22,14 +22,21 @@
 | Situation | HTTP Status | Error code |
 |---|---|---|
 | Request body fails schema validation | 400 | `VALIDATION_ERROR` |
+| Unauthenticated or invalid/expired session token | 401 | `UNAUTHORIZED` |
 | Business-rule violation (e.g., illegal status transition, overpayment) | 409 | `BUSINESS_RULE_VIOLATION` |
 | Referenced entity not found | 404 | `NOT_FOUND` |
 | Referenced entity exists but is soft-deleted/inactive where an active one is required | 409 | `CONFLICT` |
+| Rate limit exceeded (writes: 120/15m, login: 10/15m) | 429 | `RATE_LIMIT_EXCEEDED` |
 | Unexpected server error | 500 | `INTERNAL_ERROR` |
 
 Validation is always enforced server-side regardless of what the frontend already checked (`BUSINESS-RULES.md`, `ARCHITECTURE.md#validation` intent).
 
 ## Endpoint Groups
+
+### Authentication (`/api/auth`)
+- `POST /api/auth/login` — authenticate with `{ email, password }`. On success, sets `HttpOnly`, `SameSite=Strict` session cookie (`jahitflow_session`) and returns `{ data: { id, name, role } }`. Rate-limited to 10 attempts per 15 min per IP. Returns generic 401 for unknown email, wrong password, or inactive user.
+- `POST /api/auth/logout` — clears session cookie, returns `{ data: { loggedOut: true } }`.
+- `GET /api/auth/me` — returns authenticated user profile `{ data: { id, name, email, role, isActive } }`. `passwordHash` is never exposed. Returns 401 if unauthenticated.
 
 ### Customers (`/api/customers`)
 - `GET /api/customers` — list/search. Query: `q` (matches name/phone), `page`, `pageSize`.

@@ -29,7 +29,7 @@ export async function createOrderHandler(
 ): Promise<void> {
   try {
     const body = req.body as CreateOrderInput;
-    const actorId = (req.headers["x-actor-id"] as string) || null;
+    const actorId = req.actorId ?? null;
 
     const order = await createOrder(body, actorId);
     sendSuccess(res, order, undefined, 201);
@@ -50,7 +50,7 @@ export async function replaceOrderItemsHandler(
   try {
     const { id } = req.params as unknown as OrderIdParam;
     const body = req.body as ReplaceOrderItemsInput;
-    const actorId = (req.headers["x-actor-id"] as string) || null;
+    const actorId = req.actorId ?? null;
 
     const order = await replaceOrderItems(id, body.items, actorId);
     sendSuccess(res, order);
@@ -71,7 +71,7 @@ export async function transitionOrderHandler(
   try {
     const { id } = req.params as unknown as OrderIdParam;
     const body = req.body as TransitionOrderInput;
-    const actorId = (req.headers["x-actor-id"] as string) || null;
+    const actorId = req.actorId ?? null;
 
     const order = await transitionOrder(id, body.toStatus, {
       reason: body.reason,
@@ -131,7 +131,7 @@ export async function updateOrderHandler(
   try {
     const { id } = req.params as unknown as OrderIdParam;
     const body = req.body as UpdateOrderInput;
-    const actorId = (req.headers["x-actor-id"] as string) || null;
+    const actorId = req.actorId ?? null;
 
     const order = await updateOrder(id, body, actorId);
     sendSuccess(res, order);
@@ -151,7 +151,7 @@ export async function resnapshotOrderHandler(
 ): Promise<void> {
   try {
     const { id } = req.params as unknown as OrderIdParam;
-    const actorId = (req.headers["x-actor-id"] as string) || null;
+    const actorId = req.actorId ?? null;
 
     const order = await resnapshotOrder(id, actorId);
     sendSuccess(res, order);

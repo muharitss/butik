@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -566,19 +567,35 @@ export function getMeasurementFieldsForGarment(
 }
 
 async function main() {
-  // 1. Seed initial operator user if not exists
-  const userCount = await prisma.user.count();
-  if (userCount === 0) {
+  // 1. Seed or update initial operator user with hashed credentials
+  const adminEmail = process.env.INITIAL_ADMIN_EMAIL || "operator@jahitflow.com";
+  const rawAdminPassword = process.env.INITIAL_ADMIN_PASSWORD || "OperatorPass123!";
+  const passwordHash = await bcrypt.hash(rawAdminPassword, 12);
+
+  const existingOperator = await prisma.user.findFirst({
+    where: { role: "owner" }
+  });
+
+  if (!existingOperator) {
     await prisma.user.create({
       data: {
         name: "Operator",
+        email: adminEmail,
+        passwordHash,
         role: "owner",
         isActive: true,
       },
     });
-    console.log("Seeded initial operator user.");
+    console.log(`Seeded initial operator user (${adminEmail}).`);
   } else {
-    console.log("Database already has users, skipping user creation.");
+    await prisma.user.update({
+      where: { id: existingOperator.id },
+      data: {
+        email: existingOperator.email ?? adminEmail,
+        passwordHash: existingOperator.passwordHash ?? passwordHash,
+      },
+    });
+    console.log(`Updated operator user with credentials (${existingOperator.email ?? adminEmail}).`);
   }
 
   // 2. Seed garment types

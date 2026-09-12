@@ -88,10 +88,7 @@ export async function createRevisionHandler(
   try {
     const { orderId } = req.params as unknown as OrderIdParam;
     const body = req.body as CreateRevisionInput;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const created = await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -164,10 +161,7 @@ export async function updateRevisionHandler(
   try {
     const { orderId, id } = req.params as unknown as RevisionIdParam;
     const body = req.body as UpdateRevisionInput;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const result = await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({

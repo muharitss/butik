@@ -84,3 +84,13 @@ Each entry: **Decision**, **Context**, **Alternatives Considered**, **Consequenc
 **Context:** Circular dependency avoidance between `orders` and `payments` modules. Since `paid_total_cache` is updated atomically in the same database transaction on every payment write, the cached value is guaranteed to be accurate at any status-transition point.
 **Consequences:** Avoids a circular dependency between `orders` and `payments`; `getOrderBalance` remains exported by `payments` for external callers or queries needing authoritative calculation.
 
+## D-015: Authentication Strategy (JWT via HttpOnly Cookie, Bcrypt Cost 12)
+**Decision:** Credential authentication uses `email` as the login identifier (`users.email` unique, nullable for forward compatibility) with passwords hashed via `bcrypt` (cost factor 12). Sessions use short-lived JWTs (default 60m) issued in `HttpOnly`, `Secure` (in production), `SameSite=Strict` cookies (`jahitflow_session`). A global `authenticate` middleware replaces the previous `x-actor-id` stub, populating `req.actorId` and `req.userRole`.
+**Context:** Transitioning from MVP's stub actor resolution to secure multi-user authentication without breaking existing foreign keys or business flow.
+**Alternatives considered:**
+  - (a) LocalStorage tokens: vulnerable to XSS and token exfiltration.
+  - (b) Stateful session tables in Postgres: introduces unnecessary write latency on every request for a single boutique deployment.
+  - (c) Using `name` instead of `email` as login identifier: names are prone to duplicates, typos, and spaces; email provides a standardized unique handle.
+**Consequences:** Frontend must include credentials in CORS requests (`credentials: "include"`). API handlers rely exclusively on `req.actorId` populated from the verified token. Password hashes are never logged, serialized, or returned in any API response.
+
+

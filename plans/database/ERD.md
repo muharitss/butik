@@ -32,8 +32,10 @@ erDiagram
 |---|---|---|
 | id | UUID PK | |
 | name | TEXT | |
+| email | TEXT UQ | nullable, login identifier |
+| password_hash | TEXT | nullable, bcrypt hash (cost >= 12) |
 | phone | TEXT | nullable |
-| role | TEXT | enum-like, default `owner`; not enforced via app auth yet |
+| role | TEXT | enum-like, default `owner` |
 | is_active | BOOLEAN | default true |
 | created_at | TIMESTAMPTZ | |
 

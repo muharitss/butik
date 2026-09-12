@@ -39,10 +39,7 @@ export async function createPaymentHandler(
   try {
     const { orderId } = req.params as unknown as OrderIdParam;
     const body = req.body as CreatePaymentInput;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const created = await recordPayment(orderId, body, actorId);
     sendSuccess(res, created, undefined, 201);

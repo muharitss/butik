@@ -19,9 +19,30 @@ import { dashboardRouter } from "./modules/dashboard/index.js";
 import { calendarRouter } from "./modules/calendar/index.js";
 import { receiptRouter } from "./modules/receipts/index.js";
 import { whatsappRouter } from "./modules/whatsapp/index.js";
+import { authRouter, authenticate } from "./modules/auth/index.js";
 
 import { requestLogger } from "./shared/logger/index.js";
 import { rateLimitWrites } from "./shared/middleware/rateLimiter.js";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      actorId?: string | null;
+      userRole?: string | null;
+    }
+  }
+}
+
+const isTestEnv =
+  process.env.NODE_ENV === "test" ||
+  process.execArgv.includes("--test") ||
+  Boolean(process.env.NODE_TEST_CONTEXT) ||
+  process.argv.some((arg) => arg.includes(".test.ts") || arg.includes(".test.js"));
+
+if (isTestEnv) {
+  await import("./shared/test/testSetup.js");
+}
 
 const app = express();
 
@@ -46,9 +67,23 @@ app.use(express.json());
 app.use(requestLogger);
 app.use(rateLimitWrites());
 
+// Global authentication middleware with explicit exclusions
+app.use((req, res, next) => {
+  if (
+    req.path === "/api/health" ||
+    (req.path === "/api/auth/login" && req.method.toUpperCase() === "POST") ||
+    req.path.startsWith("/api/test/")
+  ) {
+    return next();
+  }
+  return authenticate(req, res, next);
+});
+
 app.get("/api/health", (_req, res) => {
   sendSuccess(res, { status: "ok" });
 });
+
+app.use("/api/auth", authRouter);
 
 // Example route demonstrating shared validation, error handling, and money helpers
 const testCalculationSchema = z.object({

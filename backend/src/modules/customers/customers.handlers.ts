@@ -143,10 +143,7 @@ export async function createCustomer(
       }
     });
 
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     await recordAudit({
       actorId,
@@ -196,10 +193,7 @@ export async function updateCustomer(
       }
     });
 
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     await recordAudit({
       actorId,
@@ -246,10 +240,7 @@ export async function deleteCustomer(
       data: { deletedAt: new Date() }
     });
 
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     await recordAudit({
       actorId,

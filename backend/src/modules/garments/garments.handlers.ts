@@ -97,10 +97,7 @@ export async function createGarmentType(
   try {
     const body = req.body as CreateGarmentTypeInput;
 
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const created = await prisma.$transaction(async (tx) => {
       const item = await tx.garmentType.create({
@@ -160,10 +157,7 @@ export async function updateGarmentType(
     const { id } = req.params as unknown as GarmentTypeIdParam;
     const body = req.body as UpdateGarmentTypeInput;
 
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const updated = await prisma.$transaction(async (tx) => {
       const existing = await tx.garmentType.findFirst({
@@ -246,10 +240,7 @@ export async function deactivateGarmentType(
   try {
     const { id } = req.params as unknown as GarmentTypeIdParam;
 
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const updated = await prisma.$transaction(async (tx) => {
       const existing = await tx.garmentType.findFirst({

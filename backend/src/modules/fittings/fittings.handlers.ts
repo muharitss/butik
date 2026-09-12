@@ -61,10 +61,7 @@ export async function scheduleFittingHandler(
   try {
     const { orderId } = req.params as unknown as OrderIdParam;
     const body = req.body as CreateFittingInput;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const created = await scheduleFitting(orderId, body, actorId);
     sendSuccess(res, created, undefined, 201);
@@ -85,10 +82,7 @@ export async function updateFittingHandler(
   try {
     const { orderId, id } = req.params as unknown as FittingIdParam;
     const body = req.body as UpdateFittingInput;
-    const actorId =
-      (req.headers["x-actor-id"] as string) ||
-      (req as unknown as { actorId?: string }).actorId ||
-      null;
+    const actorId = req.actorId ?? null;
 
     const updated = await updateFitting(orderId, id, body, actorId);
     sendSuccess(res, updated);
