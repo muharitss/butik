@@ -38,6 +38,15 @@ Validation is always enforced server-side regardless of what the frontend alread
 - `POST /api/auth/login` — authenticate with `{ email, password }` (Public). On success, sets `HttpOnly`, `SameSite=Strict` session cookie (`jahitflow_session`) and returns `{ data: { id, name, role } }`. Rate-limited to 10 attempts per 15 min per IP. Returns generic 401 for unknown email, wrong password, or inactive user.
 - `POST /api/auth/logout` — clears session cookie, returns `{ data: { loggedOut: true } }` (Authenticated: `owner`, `staff`).
 - `GET /api/auth/me` — returns authenticated user profile `{ data: { id, name, email, role, isActive } }` (Authenticated: `owner`, `staff`). `passwordHash` is never exposed. Returns 401 if unauthenticated.
+- `PATCH /api/auth/password` — change authenticated user's own password with `{ currentPassword, newPassword }` (Authenticated: `owner`, `staff`). Verifies `currentPassword` against stored hash; returns 401 on mismatch. Returns `{ data: { message: "Password changed successfully" } }`.
+
+### Users (`/api/users`)
+- `GET /api/users` — list all users (`owner` only, permission `users:manage`; returns 403 `FORBIDDEN` for `staff`). Returns `{ data: [{ id, name, email, phone, role, isActive, createdAt }] }`. `passwordHash` is never exposed.
+- `POST /api/users` — create user with temporary password (`owner` only, permission `users:manage`). Request: `{ name, email?, phone?, role: 'owner' | 'staff', temporaryPassword }`. Returns 201 Created with safe user profile.
+- `PATCH /api/users/:id` — update user details `{ name?, email?, phone?, role? }` (`owner` only, permission `users:manage`). Demoting the sole active owner to staff returns 409 `BUSINESS_RULE_VIOLATION`.
+- `PATCH /api/users/:id/deactivate` — deactivate account (`owner` only, permission `users:manage`). Deactivating own account returns 409 `CONFLICT`; deactivating the sole active owner returns 409 `BUSINESS_RULE_VIOLATION`.
+- `PATCH /api/users/:id/activate` — activate account (`owner` only, permission `users:manage`).
+- `PATCH /api/users/:id/password` — owner resets user password with `{ newPassword }` (`owner` only, permission `users:manage`). Does not require current password. Returns `{ data: { message: "Password updated successfully" } }`.
 
 ### Customers (`/api/customers`)
 - `GET /api/customers` — list/search. Query: `q` (matches name/phone), `page`, `pageSize` (Authenticated: `owner`, `staff`).

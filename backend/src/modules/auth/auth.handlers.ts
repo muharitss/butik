@@ -1,10 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../infrastructure/prisma/client.js";
 import { sendSuccess, sendError } from "../../shared/http/response.js";
-import type { LoginInput } from "./auth.schemas.js";
+import type { LoginInput, ChangePasswordInput } from "./auth.schemas.js";
 import {
   SESSION_COOKIE_NAME,
   verifyPassword,
+  hashPassword,
   signSessionToken,
   getSessionCookieOptions
 } from "./auth.service.js";
@@ -99,6 +100,57 @@ export async function meHandler(
     }
 
     sendSuccess(res, user);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changePasswordHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.actorId) {
+      sendError(res, "UNAUTHORIZED", "Authentication required", 401);
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body as ChangePasswordInput;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.actorId },
+      select: {
+        id: true,
+        passwordHash: true,
+        isActive: true
+      }
+    });
+
+    if (!user || !user.isActive) {
+      sendError(res, "UNAUTHORIZED", "User not found or inactive", 401);
+      return;
+    }
+
+    if (!user.passwordHash) {
+      sendError(res, "UNAUTHORIZED", "Current password is incorrect", 401);
+      return;
+    }
+
+    const isMatch = await verifyPassword(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      sendError(res, "UNAUTHORIZED", "Current password is incorrect", 401);
+      return;
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash }
+    });
+
+    sendSuccess(res, { message: "Password changed successfully" });
   } catch (err) {
     next(err);
   }
