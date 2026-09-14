@@ -246,14 +246,29 @@ No hard delete; use `CANCELLED` status.
 |---|---|---|
 | id | UUID PK | |
 | actor_id | UUID FK → users.id | nullable |
-| entity_type | TEXT NOT NULL | IDX, e.g. `order`, `payment` |
-| entity_id | UUID NOT NULL | IDX |
-| action | TEXT NOT NULL | e.g. `create`, `status_change`, `resolve` |
+| entity_type | TEXT NOT NULL | IDX, e.g. `order`, `payment`, `store_settings` |
+| entity_id | TEXT NOT NULL | IDX (UUID or string sentinel like `"default"`) |
+| action | TEXT NOT NULL | e.g. `create`, `status_change`, `resolve`, `update` |
 | before | JSONB | nullable |
 | after | JSONB | nullable |
 | created_at | TIMESTAMPTZ | IDX |
 
 Append-only.
+
+### store_settings
+| Field | Type | Notes |
+|---|---|---|
+| id | TEXT PK | Sentinel PK, default `"default"` |
+| name | TEXT NOT NULL | Boutique/store branding name |
+| tagline | TEXT | Tagline printed under boutique name |
+| address | TEXT | Physical address |
+| phone | TEXT | Display phone number |
+| whatsapp_phone | TEXT | WhatsApp phone number for wa.me links |
+| email | TEXT | Contact email |
+| receipt_footer | TEXT | Footer note printed on receipts |
+| updated_at | TIMESTAMPTZ | |
+
+Singleton row table.
 
 ## Indexing Summary
 

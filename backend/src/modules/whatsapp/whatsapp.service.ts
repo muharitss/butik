@@ -3,6 +3,7 @@ import { prisma } from "../../infrastructure/prisma/client.js";
 import { NotFoundError, ValidationError } from "../../shared/errors/index.js";
 import { normalizePhone } from "../customers/customers.rules.js";
 import { toMoney, subtract, round } from "../../shared/money/index.js";
+import { getStoreSettings } from "../settings/index.js";
 import type { WhatsappTemplate, WhatsappLinkResponse } from "./whatsapp.schemas.js";
 
 function formatDateIndo(date: Date): string {
@@ -27,16 +28,19 @@ export async function generateWhatsappLink(
   orderId: string,
   template: WhatsappTemplate
 ): Promise<WhatsappLinkResponse> {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: {
-      customer: true,
-      items: {
-        include: { garmentType: true },
-        orderBy: { id: "asc" }
+  const [order, settings] = await Promise.all([
+    prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: true,
+        items: {
+          include: { garmentType: true },
+          orderBy: { id: "asc" }
+        }
       }
-    }
-  });
+    }),
+    getStoreSettings()
+  ]);
 
   if (!order) {
     throw new NotFoundError("Order not found");
@@ -51,8 +55,8 @@ export async function generateWhatsappLink(
     );
   }
 
-  const boutiqueName = process.env.BOUTIQUE_NAME || "JahitFlow Boutique";
-  const boutiqueAddress = process.env.BOUTIQUE_ADDRESS || "Jl. Mode No. 123, Jakarta Selatan";
+  const boutiqueName = settings.name || "JahitFlow Boutique";
+  const boutiqueAddress = settings.address || "Jl. Mode No. 123, Jakarta Selatan";
 
   const customerName = order.customer.name;
   const orderNumber = order.orderNumber;

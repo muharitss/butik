@@ -108,6 +108,10 @@ Validation is always enforced server-side regardless of what the frontend alread
 ### WhatsApp (`/api/orders/:orderId/whatsapp-link`)
 - `GET /api/orders/:orderId/whatsapp-link?template=confirmation|ready|payment_reminder` — returns `{ url: "https://wa.me/..." }` built from the customer's phone and a filled-in message template. Purely a formatting endpoint; no external call is made.
 
+### Store Settings (`/api/settings`)
+- `GET /api/settings` — returns current boutique settings (Authenticated: `owner`, `staff`). Fallback to env variables if row is not yet initialized. Returns `{ data: { id, name, tagline, address, phone, whatsappPhone, email, receiptFooter, updatedAt } }`.
+- `PATCH /api/settings` — update boutique configuration (`owner` only, permission `settings:manage`; returns 403 `FORBIDDEN` for `staff`). Request: `{ name?, tagline?, address?, phone?, whatsappPhone?, email?, receiptFooter? }`. Logs audit entry to `audit_logs` with entity `store_settings`. Returns `{ data: StoreSettingsDto }`.
+
 ### Audit (`/api/audit-logs`)
 - `GET /api/audit-logs` — query `entityType`, `entityId`, `from`, `to`, `page`, `pageSize` — for operator/investigative review. Read-only (`owner` only, permission `audit:view`; returns 403 `FORBIDDEN` for `staff`).
 

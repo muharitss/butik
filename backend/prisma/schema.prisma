@@ -296,7 +296,7 @@ model AuditLog {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   actorId    String?   @map("actor_id") @db.Uuid
   entityType String    @map("entity_type")
-  entityId   String    @map("entity_id") @db.Uuid
+  entityId   String    @map("entity_id")
   action     String
   before     Json?
   after      Json?
@@ -307,4 +307,18 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model StoreSettings {
+  id            String   @id @default("default")
+  name          String
+  tagline       String?
+  address       String?
+  phone         String?
+  whatsappPhone String?  @map("whatsapp_phone")
+  email         String?
+  receiptFooter String?  @map("receipt_footer")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("store_settings")
 }

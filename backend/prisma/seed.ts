@@ -598,6 +598,23 @@ async function main() {
     console.log(`Updated operator user with credentials (${existingOperator.email ?? adminEmail}).`);
   }
 
+  // 2. Seed Store Settings default row
+  const defaultSettings = await prisma.storeSettings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      name: process.env.BOUTIQUE_NAME || "JahitFlow Boutique",
+      tagline: process.env.BOUTIQUE_TAGLINE || "Jasa Jahit & Busana Butik Profesional",
+      address: process.env.BOUTIQUE_ADDRESS || "Jl. Mode No. 123, Jakarta Selatan",
+      phone: process.env.BOUTIQUE_PHONE || "+62 812-3456-7890",
+      whatsappPhone: process.env.BOUTIQUE_WHATSAPP || process.env.BOUTIQUE_PHONE || "+62 812-3456-7890",
+      email: process.env.BOUTIQUE_EMAIL || "info@jahitflow.com",
+      receiptFooter: process.env.BOUTIQUE_RECEIPT_FOOTER || "Terima kasih atas kepercayaan Anda mempercayakan busana impian kepada butik kami."
+    }
+  });
+  console.log(`Store settings upserted: ${defaultSettings.name}.`);
+
   // 2. Seed garment types
   const initialGarmentCount = await prisma.garmentType.count();
   const result = await prisma.garmentType.createMany({

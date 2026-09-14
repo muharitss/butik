@@ -72,7 +72,7 @@ export async function updateUserHandler(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { name, email, phone, role } = req.body as UpdateUserInput;
 
     const existingUser = await prisma.user.findUnique({
@@ -152,7 +152,7 @@ export async function deactivateUserHandler(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Safety guard: Owner cannot deactivate themselves
     if (req.actorId === id) {
@@ -204,7 +204,7 @@ export async function activateUserHandler(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const existingUser = await prisma.user.findUnique({
       where: { id },
@@ -234,7 +234,7 @@ export async function resetUserPasswordHandler(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { newPassword } = req.body as ResetPasswordInput;
 
     const existingUser = await prisma.user.findUnique({

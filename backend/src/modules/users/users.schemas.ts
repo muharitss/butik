@@ -12,7 +12,7 @@ export const createUserSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().optional().nullable(),
   role: z.enum(["owner", "staff"], {
-    errorMap: () => ({ message: "Role must be 'owner' or 'staff'" })
+    message: "Role must be 'owner' or 'staff'"
   }),
   temporaryPassword: z
     .string()
@@ -33,7 +33,7 @@ export const updateUserSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().optional().nullable(),
   role: z.enum(["owner", "staff"], {
-    errorMap: () => ({ message: "Role must be 'owner' or 'staff'" })
+    message: "Role must be 'owner' or 'staff'"
   }).optional()
 });
 

@@ -1,6 +1,7 @@
 import { prisma } from "../../infrastructure/prisma/client.js";
 import { NotFoundError } from "../../shared/errors/index.js";
 import { toMoney, subtract, round, formatMoney } from "../../shared/money/index.js";
+import { getStoreSettings } from "../settings/index.js";
 
 export interface BoutiqueInfo {
   name: string;
@@ -65,30 +66,33 @@ export interface ReceiptDTO {
 }
 
 export async function getOrderReceipt(orderId: string): Promise<ReceiptDTO> {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: {
-      customer: true,
-      items: {
-        include: { garmentType: true },
-        orderBy: { id: "asc" }
-      },
-      payments: {
-        orderBy: { recordedAt: "asc" }
+  const [order, settings] = await Promise.all([
+    prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        customer: true,
+        items: {
+          include: { garmentType: true },
+          orderBy: { id: "asc" }
+        },
+        payments: {
+          orderBy: { recordedAt: "asc" }
+        }
       }
-    }
-  });
+    }),
+    getStoreSettings()
+  ]);
 
   if (!order) {
     throw new NotFoundError("Order not found");
   }
 
   const boutique: BoutiqueInfo = {
-    name: process.env.BOUTIQUE_NAME || "JahitFlow Boutique",
-    tagline: process.env.BOUTIQUE_TAGLINE || "Jasa Jahit & Busana Butik Profesional",
-    address: process.env.BOUTIQUE_ADDRESS || "Jl. Mode No. 123, Jakarta Selatan",
-    phone: process.env.BOUTIQUE_PHONE || "+62 812-3456-7890",
-    email: process.env.BOUTIQUE_EMAIL || "info@jahitflow.com"
+    name: settings.name,
+    tagline: settings.tagline || "",
+    address: settings.address || "",
+    phone: settings.phone || "",
+    email: settings.email
   };
 
   const remainingBalance = round(

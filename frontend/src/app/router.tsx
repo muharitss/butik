@@ -5,6 +5,7 @@ import { LoginPage } from '../features/auth/index.ts';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import { PlaceholderPage } from './pages/PlaceholderPage.tsx';
 import { SettingsLayout, UsersPage } from '../features/admin/index.ts';
+import { SettingsPage } from '../features/settings/index.ts';
 
 import {
   CustomerListPage,
@@ -122,14 +123,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'general',
-            element: (
-              <PlaceholderPage
-                title="Boutique Settings"
-                icon="⚙️"
-                phase="Phase 3 (TASK-036)"
-                description="Configure boutique profile, pricing defaults, and operational parameters."
-              />
-            ),
+            element: <SettingsPage />,
           },
         ],
       },
