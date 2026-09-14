@@ -50,7 +50,8 @@ Validation is always enforced server-side regardless of what the frontend alread
 
 ### Customers (`/api/customers`)
 - `GET /api/customers` — list/search. Query: `q` (matches name/phone), `page`, `pageSize` (Authenticated: `owner`, `staff`).
-- `GET /api/customers/:id` — detail, including order history summary (Authenticated: `owner`, `staff`).
+- `GET /api/customers/:id` — detail, including aggregated CRM metrics (`orderCount`, `totalSpending`, `outstandingBalance`, `lastOrderAt`, `measurementVersionCount`) and order history list (Authenticated: `owner`, `staff`).
+- `GET /api/customers/:id/payments` — unified payment ledger across all customer orders, newest first (`recordedAt DESC`). Query: `page`, `pageSize`. Returns `{ id, orderId, orderNumber, type, amount, method, note, recordedAt }` (Authenticated: `owner`, `staff`).
 - `POST /api/customers` — create (Authenticated: `owner`, `staff`).
 - `PATCH /api/customers/:id` — update contact info/notes (Authenticated: `owner`, `staff`).
 - `DELETE /api/customers/:id` — soft delete (`owner` only, permission `customers:delete`; returns 403 `FORBIDDEN` for `staff`; blocked if active orders exist, per `BUSINESS-RULES.md`).

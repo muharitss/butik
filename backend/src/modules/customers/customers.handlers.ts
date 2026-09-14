@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../infrastructure/prisma/client.js";
 import {
   NotFoundError,
@@ -75,7 +75,7 @@ export async function listCustomers(
 
 /**
  * GET /api/customers/:id
- * Fetches customer details plus order history placeholder.
+ * Fetches customer details plus aggregated CRM history and statistics.
  */
 export async function getCustomerById(
   req: Request,
@@ -90,6 +90,12 @@ export async function getCustomerById(
       include: {
         orders: {
           orderBy: { createdAt: "desc" }
+        },
+        _count: {
+          select: {
+            measurementVersions: true,
+            orders: true
+          }
         }
       }
     });
@@ -98,7 +104,98 @@ export async function getCustomerById(
       throw new NotFoundError("Customer not found");
     }
 
-    sendSuccess(res, customer);
+    let totalSpending = new Prisma.Decimal(0);
+    let outstandingBalance = new Prisma.Decimal(0);
+
+    for (const order of customer.orders) {
+      if (order.status !== "CANCELLED") {
+        totalSpending = totalSpending.add(order.total);
+        if (order.paymentStatusCache !== "PAID") {
+          const due = order.total.sub(order.paidTotalCache);
+          if (due.greaterThan(0)) {
+            outstandingBalance = outstandingBalance.add(due);
+          }
+        }
+      }
+    }
+
+    const { _count, ...restCustomer } = customer;
+
+    sendSuccess(res, {
+      ...restCustomer,
+      orderCount: customer.orders.length,
+      totalSpending: totalSpending.toFixed(2),
+      outstandingBalance: outstandingBalance.toFixed(2),
+      lastOrderAt: customer.orders[0]?.createdAt ? customer.orders[0].createdAt.toISOString() : null,
+      measurementVersionCount: _count.measurementVersions
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/customers/:id/payments
+ * Fetches all payments across all orders of the customer, newest first, paginated.
+ */
+export async function getCustomerPayments(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { id } = req.params as unknown as CustomerIdParam;
+    const query = req.query as unknown as CustomerQueryParams;
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
+
+    const customer = await prisma.customer.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true }
+    });
+
+    if (!customer) {
+      throw new NotFoundError("Customer not found");
+    }
+
+    const where: Prisma.PaymentWhereInput = {
+      order: {
+        customerId: id
+      }
+    };
+
+    const [payments, total] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { recordedAt: "desc" },
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNumber: true
+            }
+          }
+        }
+      }),
+      prisma.payment.count({ where })
+    ]);
+
+    const items = payments.map((p) => ({
+      id: p.id,
+      orderId: p.orderId,
+      orderNumber: p.order.orderNumber,
+      type: p.type,
+      amount: p.amount.toString(),
+      method: p.method,
+      note: p.note,
+      recordedAt: p.recordedAt.toISOString()
+    }));
+
+    sendSuccess(res, items, buildPaginationMeta(total, page, pageSize));
   } catch (err) {
     next(err);
   }

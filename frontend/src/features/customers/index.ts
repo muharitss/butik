@@ -10,7 +10,10 @@ export type {
   CustomerInput,
   PossibleDuplicate,
   PaginationMeta,
+  CustomerPaymentHistoryItem,
 } from './types/customers.types.ts';
 
 // Components
 export { OrderHistorySection } from './components/OrderHistorySection.tsx';
+export { CustomerStatsCards } from './components/CustomerStatsCards.tsx';
+export { CustomerPaymentsTab } from './components/CustomerPaymentsTab.tsx';

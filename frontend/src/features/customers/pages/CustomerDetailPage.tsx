@@ -26,9 +26,14 @@ import {
 } from 'lucide-react';
 import { usePermission } from '../../../hooks/usePermission.ts';
 import { fetchCustomer, deleteCustomer } from '../api/customers.api.ts';
+import { CustomerStatsCards } from '../components/CustomerStatsCards.tsx';
+import { CustomerPaymentsTab } from '../components/CustomerPaymentsTab.tsx';
 import { OrderHistorySection } from '../components/OrderHistorySection.tsx';
 import { CustomerMeasurementsSection } from '../../measurements/index.ts';
+import { ShoppingBag, Receipt, Ruler } from 'lucide-react';
 import type { Customer } from '../types/customers.types.ts';
+
+type DetailTab = 'orders' | 'payments' | 'measurements';
 
 export const CustomerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +41,7 @@ export const CustomerDetailPage: React.FC = () => {
   const canDeleteCustomer = usePermission('customers:delete');
 
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [activeTab, setActiveTab] = useState<DetailTab>('orders');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -267,14 +273,86 @@ export const CustomerDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Customer Body Measurements (Current Summary + History + New Entry) */}
-      <CustomerMeasurementsSection
-        customerId={customer.id}
-        customerName={customer.name}
-      />
+      {/* Customer CRM Historical Statistics Cards */}
+      <CustomerStatsCards customer={customer} />
 
-      {/* Customer Order History Section */}
-      <OrderHistorySection customerId={customer.id} orders={customer.orders} />
+      {/* CRM Navigation Tabs */}
+      <div className="space-y-4">
+        <div
+          className="flex items-center gap-2 border-b border-border pb-2 overflow-x-auto"
+          id="customer-detail-tabs"
+        >
+          <Button
+            type="button"
+            variant={activeTab === 'orders' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('orders')}
+            id="tab-customer-orders"
+            className="h-8 gap-1.5 text-xs shrink-0"
+          >
+            <ShoppingBag className="size-3.5" />
+            <span>Order History</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                activeTab === 'orders'
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {customer.orderCount ?? customer.orders?.length ?? 0}
+            </span>
+          </Button>
+
+          <Button
+            type="button"
+            variant={activeTab === 'payments' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('payments')}
+            id="tab-customer-payments"
+            className="h-8 gap-1.5 text-xs shrink-0"
+          >
+            <Receipt className="size-3.5" />
+            <span>Payment History</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant={activeTab === 'measurements' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveTab('measurements')}
+            id="tab-customer-measurements"
+            className="h-8 gap-1.5 text-xs shrink-0"
+          >
+            <Ruler className="size-3.5" />
+            <span>Body Measurements</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                activeTab === 'measurements'
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {customer.measurementVersionCount ?? 0}
+            </span>
+          </Button>
+        </div>
+
+        {/* Tab Content Panels */}
+        {activeTab === 'orders' && (
+          <OrderHistorySection customerId={customer.id} orders={customer.orders} />
+        )}
+
+        {activeTab === 'payments' && (
+          <CustomerPaymentsTab customerId={customer.id} />
+        )}
+
+        {activeTab === 'measurements' && (
+          <CustomerMeasurementsSection
+            customerId={customer.id}
+            customerName={customer.name}
+          />
+        )}
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

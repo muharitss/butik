@@ -2,6 +2,7 @@ import { apiClient } from '../../../lib/apiClient.ts';
 import type {
   Customer,
   CustomerInput,
+  CustomerPaymentHistoryItem,
   PaginationMeta,
   PossibleDuplicate,
 } from '../types/customers.types.ts';
@@ -14,6 +15,11 @@ export interface CustomerListResult {
 export interface CustomerCreateResult {
   customer: Customer;
   possibleDuplicate?: PossibleDuplicate;
+}
+
+export interface CustomerPaymentsResult {
+  payments: CustomerPaymentHistoryItem[];
+  meta: PaginationMeta;
 }
 
 export async function fetchCustomers(params: {
@@ -51,6 +57,38 @@ export async function fetchCustomers(params: {
 
 export async function fetchCustomer(id: string): Promise<Customer> {
   return apiClient.get<Customer>(`/customers/${id}`);
+}
+
+export async function fetchCustomerPayments(
+  customerId: string,
+  params: {
+    page?: number;
+    pageSize?: number;
+  } = {}
+): Promise<CustomerPaymentsResult> {
+  const query = new URLSearchParams();
+  if (params.page && params.page > 0) {
+    query.set('page', String(params.page));
+  }
+  if (params.pageSize && params.pageSize > 0) {
+    query.set('pageSize', String(params.pageSize));
+  }
+
+  const qs = query.toString();
+  const endpoint = qs ? `/customers/${customerId}/payments?${qs}` : `/customers/${customerId}/payments`;
+
+  const envelope = await apiClient.getEnvelope<CustomerPaymentHistoryItem[]>(endpoint);
+  const meta = envelope.meta as unknown as PaginationMeta | undefined;
+
+  return {
+    payments: envelope.data || [],
+    meta: {
+      page: meta?.page ?? params.page ?? 1,
+      pageSize: meta?.pageSize ?? params.pageSize ?? 20,
+      totalItems: meta?.totalItems ?? (envelope.data ? envelope.data.length : 0),
+      totalPages: meta?.totalPages ?? 1,
+    },
+  };
 }
 
 export async function createCustomer(input: CustomerInput): Promise<CustomerCreateResult> {

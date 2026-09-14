@@ -14,6 +14,7 @@ import {
 import {
   listCustomers,
   getCustomerById,
+  getCustomerPayments,
   createCustomer,
   updateCustomer,
   deleteCustomer
@@ -23,6 +24,12 @@ const customerRouter = Router();
 
 customerRouter.get("/", validateQuery(customerQuerySchema), listCustomers);
 customerRouter.post("/", validateBody(createCustomerSchema), createCustomer);
+customerRouter.get(
+  "/:id/payments",
+  validateParams(customerIdParamSchema),
+  validateQuery(customerQuerySchema),
+  getCustomerPayments
+);
 customerRouter.get("/:id", validateParams(customerIdParamSchema), getCustomerById);
 customerRouter.patch(
   "/:id",

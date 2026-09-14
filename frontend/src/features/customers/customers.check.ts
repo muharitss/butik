@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   fetchCustomers,
   fetchCustomer,
+  fetchCustomerPayments,
   createCustomer,
   updateCustomer,
   deleteCustomer,
@@ -32,7 +33,7 @@ async function runCustomerSelfChecks() {
     assert.equal(listRes.meta.totalPages, 3);
     assert.equal(listRes.meta.totalItems, 25);
 
-    // 2. fetchCustomer by ID
+    // 2. fetchCustomer by ID with CRM aggregates
     globalThis.fetch = async (input, init) => {
       assert.equal(String(input), '/api/customers/cust-1');
       assert.equal(init?.method, 'GET');
@@ -45,6 +46,11 @@ async function runCustomerSelfChecks() {
             email: 'siti@example.com',
             address: 'Jakarta',
             notes: 'VIP customer',
+            orderCount: 3,
+            totalSpending: '1500000.00',
+            outstandingBalance: '300000.00',
+            lastOrderAt: '2026-09-12T10:00:00.000Z',
+            measurementVersionCount: 2,
             createdAt: '2026-09-10T12:00:00.000Z',
             updatedAt: '2026-09-10T12:00:00.000Z',
           },
@@ -57,8 +63,43 @@ async function runCustomerSelfChecks() {
     assert.equal(singleRes.id, 'cust-1');
     assert.equal(singleRes.name, 'Siti Rahmawati');
     assert.equal(singleRes.phone, '081234567890');
+    assert.equal(singleRes.orderCount, 3);
+    assert.equal(singleRes.totalSpending, '1500000.00');
+    assert.equal(singleRes.outstandingBalance, '300000.00');
+    assert.equal(singleRes.measurementVersionCount, 2);
 
-    // 3. createCustomer with possibleDuplicate meta
+    // 3. fetchCustomerPayments
+    globalThis.fetch = async (input, init) => {
+      const url = String(input);
+      assert.ok(url.includes('/api/customers/cust-1/payments?page=1&pageSize=10'));
+      assert.equal(init?.method, 'GET');
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: 'pay-1',
+              orderId: 'order-1',
+              orderNumber: 'JF-2026-0001',
+              type: 'DP',
+              amount: '500000',
+              method: 'Bank Transfer',
+              note: 'Down payment',
+              recordedAt: '2026-09-11T14:00:00.000Z',
+            },
+          ],
+          meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    };
+
+    const paymentsRes = await fetchCustomerPayments('cust-1', { page: 1, pageSize: 10 });
+    assert.equal(paymentsRes.payments.length, 1);
+    assert.equal(paymentsRes.payments[0].orderNumber, 'JF-2026-0001');
+    assert.equal(paymentsRes.payments[0].amount, '500000');
+    assert.equal(paymentsRes.meta.totalItems, 1);
+
+    // 4. createCustomer with possibleDuplicate meta
     globalThis.fetch = async (input, init) => {
       assert.equal(String(input), '/api/customers');
       assert.equal(init?.method, 'POST');
@@ -91,7 +132,7 @@ async function runCustomerSelfChecks() {
     assert.equal(createRes.possibleDuplicate?.id, 'cust-1');
     assert.equal(createRes.possibleDuplicate?.name, 'Siti Rahmawati');
 
-    // 4. updateCustomer
+    // 5. updateCustomer
     globalThis.fetch = async (input, init) => {
       assert.equal(String(input), '/api/customers/cust-1');
       assert.equal(init?.method, 'PATCH');
@@ -107,7 +148,7 @@ async function runCustomerSelfChecks() {
     const updateRes = await updateCustomer('cust-1', { notes: 'Updated note' });
     assert.equal(updateRes.notes, 'Updated note');
 
-    // 5. deleteCustomer
+    // 6. deleteCustomer
     globalThis.fetch = async (input, init) => {
       assert.equal(String(input), '/api/customers/cust-1');
       assert.equal(init?.method, 'DELETE');

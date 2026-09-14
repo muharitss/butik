@@ -11,6 +11,22 @@ export interface Customer {
   updatedAt: string;
   deletedAt?: string | null;
   orders?: CustomerOrderSummary[];
+  orderCount?: number;
+  totalSpending?: string | number;
+  outstandingBalance?: string | number;
+  lastOrderAt?: string | null;
+  measurementVersionCount?: number;
+}
+
+export interface CustomerPaymentHistoryItem {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  type: string;
+  amount: string | number;
+  method: string | null;
+  note: string | null;
+  recordedAt: string;
 }
 
 export interface CustomerInput {
