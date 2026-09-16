@@ -22,6 +22,7 @@ import { whatsappRouter } from "./modules/whatsapp/index.js";
 import { authRouter, authenticate } from "./modules/auth/index.js";
 import { usersRouter } from "./modules/users/index.js";
 import { settingsRouter } from "./modules/settings/index.js";
+import { reportsRouter } from "./modules/reports/index.js";
 
 import { requestLogger } from "./shared/logger/index.js";
 import { rateLimitWrites } from "./shared/middleware/rateLimiter.js";
@@ -117,6 +118,7 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/calendar", calendarRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/reports", reportsRouter);
 app.use("/api/orders", orderRouter);
 
 app.use(errorHandler);

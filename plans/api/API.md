@@ -113,6 +113,9 @@ Validation is always enforced server-side regardless of what the frontend alread
 - `GET /api/settings` — returns current boutique settings (Authenticated: `owner`, `staff`). Fallback to env variables if row is not yet initialized. Returns `{ data: { id, name, tagline, address, phone, whatsappPhone, email, receiptFooter, updatedAt } }`.
 - `PATCH /api/settings` — update boutique configuration (`owner` only, permission `settings:manage`; returns 403 `FORBIDDEN` for `staff`). Request: `{ name?, tagline?, address?, phone?, whatsappPhone?, email?, receiptFooter? }`. Logs audit entry to `audit_logs` with entity `store_settings`. Returns `{ data: StoreSettingsDto }`.
 
+### Reports (`/api/reports`)
+- `GET /api/reports/summary?from=YYYY-MM-DD&to=YYYY-MM-DD` — period-aggregate report (`owner` only, permission `reports:view`; returns 403 `FORBIDDEN` for `staff`). Query: `from`, `to` (optional ISO/date strings). Returns `{ data: { totalOrders, completedOrders, cancelledOrders, totalRevenue, totalCollected, outstandingBalance, newCustomers } }`.
+
 ### Audit (`/api/audit-logs`)
 - `GET /api/audit-logs` — query `entityType`, `entityId`, `from`, `to`, `page`, `pageSize` — for operator/investigative review. Read-only (`owner` only, permission `audit:view`; returns 403 `FORBIDDEN` for `staff`).
 

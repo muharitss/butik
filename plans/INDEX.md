@@ -64,3 +64,4 @@ No silent architecture drift is permitted.
 ## Current Implementation Phase
 
 **Phase 9 (Receipt & WhatsApp Link) complete.** TASK-029 (Printable Receipt) and TASK-030 (WhatsApp Link Helper) are implemented and verified with automated test suites and runnable checks.
+**Reporting Infrastructure (TASK-038) complete.** `backend/src/modules/reports` provides `GET /api/reports/summary` with period-filtered metrics and global outstanding balance snapshot, owner-only authorization, and full integration test coverage.
