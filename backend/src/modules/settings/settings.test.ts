@@ -61,14 +61,12 @@ test("Store Settings Module Integration Tests", async (t) => {
 
     const ownerToken = await signSessionToken({
       userId: owner.id,
-      email: owner.email,
       role: owner.role
     });
     ownerCookie = `${SESSION_COOKIE_NAME}=${ownerToken}`;
 
     const staffToken = await signSessionToken({
       userId: staff.id,
-      email: staff.email,
       role: staff.role
     });
     staffCookie = `${SESSION_COOKIE_NAME}=${staffToken}`;
