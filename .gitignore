@@ -35,3 +35,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# AI Agent Skills (bisa di-restore lewat CLI)
+.agents/skills/
+.claude/skills/
+agent/skills/

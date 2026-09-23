@@ -87,13 +87,13 @@ export async function transitionOrderHandler(
  * GET /api/orders
  * Lists orders with optional filters (q, status, dueBefore, dueAfter) and pagination.
  */
-export async function listOrdersHandler(
-  req: Request,
+export async function listOrdersHandler( // async function fungsi ini berjalan secara asynchronous karena ada proses i/o yaitu fetching data dari database
+  req: Request, // Request dan Response itu adalah object bawaan express untuk menangkap data http masuk dan mengirim http response balik ke client
   res: Response,
-  next: NextFunction
-): Promise<void> {
+  next: NextFunction // NextFunction: fungsi middleware bawaan express untuk meneruskan kendali atau error ke handler berikutnya
+): Promise<void> { 
   try {
-    const query = req.query as unknown as ListOrdersQueryParams;
+    const query = req.query as unknown as ListOrdersQueryParams; // nanti
     const { items, meta } = await listOrders(query);
     sendSuccess(res, items, meta);
   } catch (err) {

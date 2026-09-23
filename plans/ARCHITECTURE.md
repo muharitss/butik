@@ -2,192 +2,289 @@
 
 ## 1. Architectural Style
 
-**Modular monolith.** One backend deployable, one frontend deployable, one PostgreSQL database. The backend is internally organized into domain modules with explicit boundaries, but there is no network boundary between modules — calls between modules happen via direct function/service calls within the same process, not HTTP or a message bus.
+**Modular Monolith aligned with Clean Architecture principles.** One backend deployable, one frontend deployable, and one PostgreSQL database. The backend is organized into domain-driven modules with explicit architectural boundaries:
+- **Delivery Mechanism (Interface Adapters):** HTTP routing, input validation, and response serialization.
+- **Application Layer (Use Cases / Services):** Workflow orchestration, transaction management, and cross-module coordination.
+- **Domain Layer (Entities & Rules):** Pure business invariants, state machines, transition guards, and exact financial calculations.
+- **Infrastructure Layer:** Database access (Prisma ORM), external service adapters (Cloudinary, WhatsApp link builders), and system services.
 
-Rationale: single business, single operator, small order volume (see `DECISIONS.md#modular-monolith`). Distributed-systems patterns would add operational cost with no corresponding benefit at this scale.
+There is no network boundary between modules — inter-module communication occurs via in-process function/service calls, respecting dependency direction.
 
-## 2. System Boundaries
+> **Rationale:** Single boutique business, single operator, low order volume (see `DECISIONS.md#modular-monolith`). Distributed microservices would introduce excessive operational overhead and operational latency with zero benefit. At the same time, maintaining strict internal Clean Architecture layering ensures high testability, prevents spaghetti dependencies, and keeps business rules independent of web frameworks and database clients.
+
+---
+
+## 2. System Boundaries & Dependency Rule
 
 ```
-┌─────────────────────┐        HTTPS/JSON        ┌──────────────────────┐
-│  Frontend (React)    │ ───────────────────────▶ │  Backend (Express)   │
-│  Vite + TypeScript   │ ◀─────────────────────── │  Node.js + TS        │
-└─────────────────────┘                            └──────────┬───────────┘
-                                                                │
-                                                     Prisma ORM │
-                                                                ▼
-                                                     ┌──────────────────┐
-                                                     │   PostgreSQL     │
-                                                     └──────────────────┘
-                                                                │
-                                                     HTTPS (upload API)
-                                                                ▼
-                                                     ┌──────────────────┐
-                                                     │   Cloudinary     │
-                                                     └──────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                   Frontend (React SPA)                 │
+│                 Vite + TypeScript + Tailwind           │
+└───────────────────────────┬────────────────────────────┘
+                            │ HTTPS / JSON (REST)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               Delivery Layer (Express Adapters)        │
+│          Router (HTTP) ──▶ Handler (Req/Res Mapper)    │
+└───────────────────────────┬────────────────────────────┘
+                            │ Plain DTOs / Input Models
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               Application Layer (Use Cases)            │
+│            Module Services (Workflow Orchestration)    │
+└─────────────┬────────────────────────────┬─────────────┘
+              │                            │
+              ▼                            ▼
+┌──────────────────────────┐  ┌──────────────────────────┐
+│       Domain Layer       │  │   Infrastructure Layer   │
+│  Pure Rules & Invariants │  │  Prisma ORM & PostgreSQL │
+│ State Machines & Guards  │  │  Cloudinary Asset Store  │
+└──────────────────────────┘  └──────────────────────────┘
 ```
 
-The frontend never talks to PostgreSQL or Cloudinary directly for persistence of business data. Attachment upload may use a signed direct-upload flow to Cloudinary from the frontend (see `DECISIONS.md#cloudinary`), but the resulting metadata is always registered with the backend, which is the only writer of the database.
+### Dependency Direction Rules
+1. **Inward Dependencies:** Source code dependencies point inward toward business policy. Handlers depend on Services; Services depend on Domain Rules and call Infrastructure.
+2. **Pure Domain:** Business rules in `*.rules.ts` and `shared/money/` must remain pure: zero imports from Express (`Request`/`Response`), zero database dependencies, and zero side-effects.
+3. **Delivery as Detail:** Handlers must never contain business logic, branching domain validations, or direct database queries.
+4. **Persistence as Detail:** Business entities and use case workflows must not be modeled solely around database table convenience.
+
+---
 
 ## 3. Backend Architecture
 
-### 3.1 Module Structure
+### 3.1 Directory Structure
 
 ```
 backend/src/
 ├── modules/
-│   ├── customers/
-│   ├── garments/
-│   ├── measurements/
-│   ├── orders/
-│   ├── payments/
-│   ├── fittings/
-│   ├── revisions/
-│   ├── attachments/
-│   ├── dashboard/
-│   ├── calendar/
-│   ├── receipts/
-│   ├── whatsapp/
-│   └── audit/
+│   ├── attachments/     (order design sketches & fabric photos)
+│   ├── audit/           (selective immutable audit trail)
+│   ├── auth/            (authentication, JWT tokens, login/logout)
+│   ├── calendar/        (deadlines, fittings, delivery events)
+│   ├── customers/       (customer records & CRM aggregations)
+│   ├── dashboard/       (operational status aggregations & metrics)
+│   ├── fittings/        (fitting sessions & status transitions)
+│   ├── garments/        (garment catalog & custom measurement fields)
+│   ├── measurements/    (customer body measurement versions)
+│   ├── orders/          (order lifecycle, pricing, item management)
+│   ├── payments/        (append-only payment records & balance calculations)
+│   ├── receipts/        (printable thermal/A4 receipt data generation)
+│   ├── reports/         (financial & operational summaries)
+│   ├── revisions/       (post-fitting alterations & rework tracking)
+│   ├── settings/        (boutique metadata, store profile)
+│   ├── users/           (staff accounts, roles, access management)
+│   └── whatsapp/        (templated wa.me customer communication links)
 ├── shared/
-│   ├── errors/
-│   ├── validation/
-│   ├── http/           (response envelope, pagination helpers)
-│   └── money/          (monetary value helpers)
+│   ├── auth/            (RBAC permissions, authorize middleware)
+│   ├── errors/          (AppError, BusinessRuleViolationError, NotFoundError)
+│   ├── http/            (sendSuccess, sendError, pagination helpers)
+│   ├── logger/          (request logging middleware)
+│   ├── middleware/      (rateLimiter, common guards)
+│   ├── money/           (exact decimal arithmetic & currency formatting)
+│   ├── test/            (test setup, in-memory fixtures)
+│   └── validation/      (Zod schema validation middleware)
 ├── infrastructure/
-│   ├── prisma/          (client, migrations live in prisma/ at repo root)
-│   └── cloudinary/
-├── app.ts               (Express app wiring)
-└── server.ts             (process entrypoint)
+│   ├── prisma/          (Prisma client instance & schema)
+│   └── cloudinary/      (Cloudinary upload signatures & asset destruction)
+├── app.ts               (Express app bootstrap & router composition)
+└── server.ts            (Process entrypoint & listener)
 ```
 
-### 3.2 Module Internal Shape
+### 3.2 Module Internal Anatomy
 
-A module is **not required** to have `controller/service/repository/use-case` for every feature. Each module has, at minimum:
+Each domain module is structured into distinct, cohesive layers:
 
-- `<module>.routes.ts` — Express route definitions, wires HTTP to handlers.
-- `<module>.handlers.ts` — request/response translation (parse input, call domain logic, shape response). May be merged with routes for very small modules (e.g. `garments`, `whatsapp`).
-- `<module>.rules.ts` — business rules and validation that don't belong to a single request (e.g. order state transition legality). Only created when rules exist beyond simple schema validation.
-- `<module>.types.ts` — module-local types/DTOs not already covered by Prisma's generated types.
+| File Pattern | Architectural Role | Responsibilities & Constraints |
+| :--- | :--- | :--- |
+| `<module>.router.ts` | **HTTP Route Boundary** | Binds HTTP paths/verbs, attaches authentication (`authenticate`), authorization (`authorize`), and Zod validation middleware (`validate`). |
+| `<module>.handlers.ts` | **Interface Adapter (Delivery)** | Extracts typed params/body/actor, delegates directly to application service functions, and maps output to `sendSuccess(res, data)`. **MUST NOT perform database queries (`prisma.*`) or domain calculations.** |
+| `<module>.service.ts` | **Application Use Cases** | Orchestrates domain workflows, manages database transactions (`prisma.$transaction`), invokes domain rules, coordinates cross-module calls, and triggers audit logging. |
+| `<module>.rules.ts` | **Domain Invariants & Policies** | Pure business functions: state machine transition validation, transition guards, business calculations. **No async, no database, no HTTP.** |
+| `<module>.schemas.ts` | **Input/Output DTOs** | Zod schemas and inferred TypeScript types for request validation and response shaping. |
+| `<module>.test.ts` | **Integration & Feature Tests** | Tests API endpoints and end-to-end module workflows. |
+| `index.ts` | **Public Module API** | Re-exports only router, public service functions, and necessary types. Modules must not reach into private internals of other modules. |
 
-A `service` layer (a class/module separating "business logic" from "handler") is introduced **only** for modules with non-trivial orchestration across multiple tables in one transaction: `orders`, `payments`, `measurements`. Modules with simple CRUD (`customers`, `garments`) keep logic directly in handlers calling Prisma.
+### 3.3 Module Boundaries & Cross-Module Invocations
 
-Do not introduce `repository` abstractions over Prisma — Prisma's client already is the repository layer for this project's scale. Do not introduce `factory`, `strategy`, `adapter`, `facade`, or `gateway` patterns unless a specific task's Architecture Context section calls for one with a stated reason.
+- **Explicit Service Calls:** Cross-module coordination must occur via explicit exported service functions (e.g. `orders.service.ts` calls `getCurrentMeasurementVersion` from `measurements` and `recordAudit` from `audit`).
+- **No Rule Duplication:** A module must not re-implement another module's business rules. For example, `fittings` checks order transition eligibility by invoking the `orders` module's status transition API, not by manually modifying the order status in the database.
+- **Transactional Boundary:** When a workflow spans multiple modules atomically (e.g. creating an order, taking a measurement snapshot, and recording an initial status history), the initiating service controls the `prisma.$transaction` and passes the transaction client (`tx`) down to participating service functions.
+- **Cross-Cutting Audit:** Mutations log selective before/after states via `recordAudit(payload, tx)` from `modules/audit/`. Audit logging is explicitly invoked in application services, never in generic HTTP middleware, ensuring domain-meaningful payloads.
 
-### 3.3 Module Boundaries
+---
 
-- A module may read another module's Prisma models directly (this is a monolith with one schema — that's acceptable), but **must not** duplicate another module's business rules. E.g., `payments` computes "does this payment exceed the remaining balance" using order totals fetched via the `orders` module's exposed calculation function, not by re-deriving the formula independently.
-- Cross-module orchestration (e.g., "creating an order also creates a measurement snapshot") lives in the module that owns the _triggering_ action (`orders`), which calls an explicit exported function from the owned module (`measurements`), never by reaching into the other module's Prisma models to replicate its logic.
-- `audit` is a cross-cutting module: other modules call a shared `recordAudit(...)` function after a successful mutation. Audit logging is not implemented as request middleware auto-inspecting responses, because before/after payloads need domain-specific shaping.
+## 4. Authentication & Authorization Architecture
 
-### 3.4 Transactions
+### 4.1 Authentication Strategy (D-015)
+- **Token Mechanism:** Stateless JSON Web Tokens (JWT) signed via `jose` with HS256.
+- **Storage:** Secure `HttpOnly`, `SameSite=Strict`, `Secure` (production) cookies (`jahitflow_session`).
+- **Password Security:** Hashed using `bcryptjs` with cost factor 12.
+- **Actor Resolution:** Global authentication middleware in [app.ts](file:///c:/Users/Muharits/programmer/butik/backend/src/app.ts) validates the JWT on incoming requests and populates `req.actorId` and `req.userRole`. Health checks and login routes are explicitly exempted.
 
-Any mutation that touches more than one table as a single business action (order creation + snapshot + status history; payment creation + order balance recompute; fitting result + auto-created revision) **must** run inside a single Prisma `$transaction`. Partial writes are not acceptable for financial or status data.
+### 4.2 Role-Based Access Control (RBAC) (D-016)
+- **Roles:** `owner` (full administrative and financial authority) and `tailor`/`staff` (operational tasks: order handling, customer measurements, fittings).
+- **Enforcement:** Pure in-memory permission mapping (`shared/auth/permissions.ts`) paired with the composable `authorize(permission)` middleware.
+- **Policy:** Route-level authorization blocks unauthorized actors before executing business logic, returning standard `403 FORBIDDEN` envelopes.
 
-## 4. Frontend Architecture
+---
 
-### 4.1 Structure
+## 5. Frontend Architecture
+
+### 5.1 Directory & Feature Structure
 
 ```
 frontend/src/
-├── app/                 (routing, layout shell, providers)
-├── features/
-│   ├── customers/
-│   ├── garments/
-│   ├── measurements/
-│   ├── orders/
-│   ├── payments/
-│   ├── fittings/
-│   ├── revisions/
-│   ├── attachments/
-│   ├── dashboard/
-│   ├── calendar/
-│   └── receipts/
-├── components/          (shared, feature-agnostic UI)
-├── hooks/               (shared, feature-agnostic hooks)
-├── lib/                 (API client, formatting, whatsapp link builder)
-└── types/               (shared types mirroring backend DTOs)
+├── app/                 (routing definitions, shell layout, global providers)
+├── features/            (domain feature slices matching backend modules)
+│   ├── auth/            (login form, auth context, session state)
+│   ├── customers/       (customer list, detail, CRM history)
+│   ├── garments/        (garment catalog, custom measurement fields)
+│   ├── measurements/    (measurement history, entry forms)
+│   ├── orders/          (order management, item creation, workflow actions)
+│   ├── payments/        (recording payments, balance status)
+│   ├── fittings/        (schedule, log fitting results)
+│   ├── revisions/       (rework logging & tracking)
+│   ├── attachments/     (design sketch gallery, Cloudinary uploader)
+│   ├── dashboard/       (stat cards, urgent alerts, due-soon orders)
+│   ├── calendar/        (monthly/weekly deadline view)
+│   ├── receipts/        (printable receipt view)
+│   ├── reports/         (revenue, order completion stats)
+│   └── settings/        (boutique profile configuration)
+├── components/ui/       (design system primitives: Button, Input, Modal, etc.)
+├── hooks/               (reusable UI hooks: useDebounce, usePermission)
+├── lib/                 (apiClient wrapper, formatting helpers)
+└── types/               (shared contract types)
 ```
 
-Each `features/<x>` folder owns its own components, API calls, and local state for that domain. Cross-feature UI composition (e.g., an order detail page embedding payment and fitting summaries) imports from those features' public exports rather than duplicating their logic.
+### 5.2 Layering & Component Decomposition
+To prevent "God Components" and maintain clean UI separation:
+1. **Views / Pages (`pages/`):** High-level layout and routing containers. Compose sub-components and bind hooks.
+2. **Domain Components (`components/`):** Focused presentational or localized interactive components (e.g. `CustomerSelectModal`, `OrderItemTable`, `OrderSummaryCard`).
+3. **Form / State Hooks (`hooks/`):** Custom hooks encapsulating complex form state, validation, and multi-step orchestration (e.g. `useOrderCreateForm`).
+4. **Data Gateways (`api/*.api.ts`):** Typed API client functions invoking the shared `apiClient` wrapper. UI components never call raw `fetch` directly.
 
-### 4.2 State Management
+### 5.3 State Management & UI Principles
+- **Server State:** Handled per-feature via lightweight async fetching and localized state or `@tanstack/react-query`.
+- **Client State:** React built-in state primitives (`useState`, `useReducer`, Context for Auth). No heavyweight global store library (D-012).
+- **Responsive Philosophy:** Mobile-first for shop-floor data capture (measurements, fitting notes, customer intake); desktop-optimized for dense operational views (dashboard, calendar, order lists).
 
-No global state management library is introduced for MVP. Server data is fetched per-feature (a lightweight fetch wrapper in `lib/`, e.g. via `fetch` + a small typed helper, or `@tanstack/react-query` if the team prefers — this is a Post-MVP-safe substitution and does not require an architecture change since it only affects `lib/` and feature hooks). Local UI state uses React's built-in state/hooks. This is revisited only if cross-feature state sharing becomes a genuine pain point.
+---
 
-### 4.3 UI Principles
+## 6. Database Architecture
 
-- Mobile-first for data entry screens (customer intake, measurement entry, payment recording) since these are the most likely to be done on a phone in the shop.
-- Desktop-friendly, information-dense views for dashboard, order list, and receipt printing.
-- Forms are the primary UI element; favor simple forms with clear validation messages over multi-step wizards, except where the domain genuinely requires staged entry (e.g., order creation: select customer → select items → confirm measurements → confirm pricing).
+- **Engine:** PostgreSQL 15+.
+- **ORM & Migrations:** Prisma ORM. Prisma schema lives at `backend/prisma/schema.prisma`. All schema modifications happen strictly through `prisma migrate deploy`.
+- **Identity & Keys:** UUIDv4 primary keys generated natively in PostgreSQL via `gen_random_uuid()` for all tables (D-011). Sequential order numbers (`JF-YYYY-NNN`) are generated separately using atomic row-level locks on `order_number_counters` (`SELECT FOR UPDATE`).
+- **Precision Financials:** Monetary amounts are stored as `DECIMAL(14,2)` to prevent floating-point rounding errors (D-010). Calculations in code use the decimal-safe math utility in `shared/money/`.
+- **Immutability & Auditability:**
+  - Append-only tables: `measurement_versions`, `order_measurement_snapshots`, `order_measurement_snapshot_values`, `order_status_histories`, `payments`, `audit_logs`.
+  - Corrections to payments are written as new adjustment/reversal rows (D-004).
+  - Snapshot isolation: When an order is created or re-snapshotted, customer measurement values are copied into an immutable order snapshot, guaranteeing tailoring specs never change retroactively when customer profiles are updated (D-003).
+- **Deletion Policy:** Soft-delete (`deleted_at`) for `customers`, `garment_types`, and `order_attachments`. Domain entities (`orders`, `fittings`, `revisions`) utilize explicit terminal state transitions (`CANCELLED`), never hard deletion (D-008).
 
-## 5. Database Architecture
+---
 
-PostgreSQL via Prisma ORM. Prisma schema lives at `backend/prisma/schema.prisma`; the `database/ERD.md` document is the human-readable design and must stay consistent with the schema.
+## 7. External Services & Adapters
 
-Key architectural commitments (detailed in `DECISIONS.md` and `database/ERD.md`):
+- **Cloudinary (Storage Gateway):**
+  - Used for garment photos, reference sketches, and fabric attachments.
+  - Architecture uses signed direct-upload: backend issues a cryptographic upload signature via [infrastructure/cloudinary/](file:///c:/Users/Muharits/programmer/butik/backend/src/infrastructure/cloudinary/index.ts); frontend uploads directly to Cloudinary CDN; frontend registers public ID and URL with the backend (D-006).
+  - Binary file payloads never pass through the Node.js backend process.
+- **WhatsApp (Notification Gateway):**
+  - Zero third-party API dependencies or bot subscriptions.
+  - Backend/Frontend builds structured `https://wa.me/<phone>?text=<encoded_text>` deep links from domain templates (order confirmation, fitting reminders, invoice ready) for the operator to send with one click (D-007).
 
-- **Append-only / immutable records** for measurement versions, order measurement snapshots, payments, and order status history. Corrections are new rows, not edits, except for narrowly-scoped mutable metadata (e.g., a customer's phone number, a garment type's name).
-- **Soft delete** (`deleted_at` timestamp) for `customers`, `garment_types`, `order_attachments`. **No delete** (cancellation/reversal only) for `orders`, `payments`, `fittings`, `revisions`, `measurement_versions`.
-- Monetary values stored as integer minor units is unnecessary for IDR (no minor unit in practice); store as `DECIMAL(14,2)` to avoid floating-point error while allowing sub-unit precision if ever needed.
-- All primary keys are UUIDs (`gen_random_uuid()` via Postgres `pgcrypto`/`gen_random_uuid()` built-in on PG13+), except `audit_logs` and `order_status_histories`, which may use bigserial since they are pure append logs with no external referencing need beyond FK — UUID is fine there too for consistency; **decision: use UUID everywhere** for simplicity (see `DECISIONS.md`).
+---
 
-## 6. External Services
-
-- **Cloudinary**: attachment file storage. Backend stores `cloudinary_public_id`, `secure_url`, and upload metadata only — never binary content in Postgres.
-- **WhatsApp**: no API integration. The backend/frontend builds `https://wa.me/<phone>?text=<url-encoded message>` links from templates; opening the link is a client-side action (opens WhatsApp app/web).
-
-No other external services are part of MVP.
-
-## 7. Data Flow (Representative: Order Creation)
+## 8. Representative Data Flow: Order Creation Lifecycle
 
 ```
-Frontend: user selects customer, items, confirms measurement version
-   → POST /api/orders
-Backend orders module:
-   1. Validate customer exists, items reference active garment types
-   2. Resolve customer's current measurement version
-   3. Begin transaction:
-      a. Generate order_number
-      b. Insert order (status=DRAFT), order_items
-      c. Insert order_measurement_snapshot + snapshot values (copied from measurement_version)
-      d. Insert order_status_history (null → DRAFT)
-      e. Compute and store subtotal/total on order
-      f. Call audit.recordAudit('order','create',...)
-   4. Commit, return order DTO
+[Tailor / Operator]
+        │
+        │ 1. Submits Order Form (Customer ID, Garment Items, Due Date)
+        ▼
+[Frontend: OrderCreatePage]
+        │
+        │ 2. POST /api/orders (Bearer Cookie)
+        ▼
+[Backend: app.ts]
+        │
+        │ 3. authenticate & rateLimitWrites middleware
+        ▼
+[orders.router.ts]
+        │
+        │ 4. validate({ body: createOrderSchema })
+        ▼
+[orders.handlers.ts]
+        │
+        │ 5. Unpacks input & req.actorId ──▶ invokes createOrder(input, actorId)
+        ▼
+[orders.service.ts]
+        │
+        │ 6. Executes inside prisma.$transaction:
+        │    a. Validates customer existence & active status
+        │    b. Validates garment types are active
+        │    c. Calls measurements.getCurrentMeasurementVersion(customerId, tx)
+        │    d. Calls computeOrderTotals (pure calculation)
+        │    e. Generates sequential orderNumber via getNextOrderNumber(year, tx) [FOR UPDATE]
+        │    f. Inserts Order (status=DRAFT) + OrderItems
+        │    g. Inserts OrderMeasurementSnapshot + SnapshotValues (copied values)
+        │    h. Inserts OrderStatusHistory (null -> DRAFT)
+        │    i. Calls audit.recordAudit({ action: "create", entityType: "order" }, tx)
+        ▼
+[Database (PostgreSQL)]
+        │
+        │ 7. Transaction commits atomically
+        ▼
+[orders.handlers.ts]
+        │
+        │ 8. sendSuccess(res, order, undefined, 201)
+        ▼
+[Frontend: OrderCreatePage]
+        │
+        │ 9. Navigates to /orders/:id with success notification
 ```
 
-## 8. Constraints
-
-- Single deployment region/instance; no horizontal scaling requirement for MVP.
-- No authentication for MVP (see `DECISIONS.md#auth-scope`); a placeholder `system` actor is used for audit records until real users exist.
-- Node.js + Express + TypeScript on the backend; React + Vite + TypeScript on the frontend; no alternate runtime or framework substitutions without an architecture change record.
+---
 
 ## 9. Testing Architecture
 
-- **Unit tests** live alongside the module (`modules/orders/__tests__/`), covering pure/business logic: pricing math, status transition legality, measurement snapshot construction, payment balance math.
-- **Integration tests** spin up the Express app against a test PostgreSQL database (or a transactional test schema) and exercise real API routes + Prisma, covering cross-module flows (order → payment → status).
-- **E2E tests** (optional tooling choice, e.g. Playwright) drive the actual frontend against a running backend for the critical path in `TESTING` section of `ROADMAP.md`'s Phase 10 task.
-- Test framework choice (Jest or Vitest) is left to the Foundation task but must be consistent across backend and frontend where feasible.
+Testing utilizes the native Node.js Test Runner (`node:test` + `node:assert/strict`), eliminating testing framework bloat.
 
-## 10. Deployment Architecture
+### Tier 1: Pure Domain Unit Tests (`backend/src/unit.test.ts` & `*.rules.ts`)
+- Tests business math, pricing logic, order status state machine transitions, and revision guards in memory.
+- Execution speed: < 100ms.
+- Requirements: Zero database, zero network, zero Express setup.
+
+### Tier 2: Module & API Integration Tests (`*.test.ts`)
+- Exercises HTTP endpoints, route authorization, database transactions, and cascade rules against a test PostgreSQL instance.
+- Includes constraint validations (e.g. `orders.constraints.test.ts`) to verify uniqueness, row-level locking, and transactional rollback behavior.
+
+### Tier 3: End-to-End & Sanity Checks (`backend/src/e2e.test.ts`)
+- Simulates complete operational lifecycles: Customer Intake → Measurement Capture → Order Creation → Payment Recording → Fitting Transition → Completion.
+
+---
+
+## 10. Deployment & Operational Architecture
 
 ```
-                 ┌────────────┐
-   Users ──────▶ │  Frontend   │  (static build, served via CDN/static host)
-                 └─────┬──────┘
-                       │ HTTPS
-                       ▼
-                 ┌────────────┐
-                 │  Backend    │  (single Node process, e.g. container/VM/PaaS)
-                 └─────┬──────┘
-                       │
-                 ┌─────▼──────┐        ┌──────────────┐
-                 │ PostgreSQL │        │  Cloudinary   │
-                 └────────────┘        └──────────────┘
+                    ┌────────────────────────┐
+   Users / Tailor ─▶│   Frontend (React SPA) │ (Vite static build served via CDN / Nginx)
+                    └───────────┬────────────┘
+                                │ HTTPS (CORS restricted)
+                                ▼
+                    ┌────────────────────────┐
+                    │  Backend (Node/Express)│ (Single process container, e.g. Docker)
+                    └──────┬──────────┬──────┘
+                           │          │
+         Prisma Connection │          │ HTTPS Upload Signature
+                           ▼          ▼
+            ┌────────────────┐      ┌────────────────────────┐
+            │   PostgreSQL   │      │ Cloudinary Media Cloud │
+            └────────────────┘      └────────────────────────┘
 ```
 
-- Environments: `development`, `production` at minimum, distinguished by `.env` files / environment variables (never committed).
-- Prisma Migrate is the single mechanism for schema change; no manual DDL in production.
-- Database backups: at minimum daily automated backup of PostgreSQL (mechanism depends on hosting choice — document the actual choice in `DECISIONS.md` once hosting is selected).
-- No Kubernetes, no container orchestration platform required.
+- **Environment Config:** Managed strictly via environment variables (`.env`, `.env.example`).
+- **Database Migrations:** Deployed via `prisma migrate deploy` during deployment pipeline prior to process boot.
+- **Backups:** Automated daily logical dump (`pg_dump`) of PostgreSQL database.
+- **Process Model:** Single Node.js process managed via Docker container; no multi-region or distributed container orchestration required for single-boutique scale.
