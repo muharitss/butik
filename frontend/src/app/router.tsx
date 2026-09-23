@@ -24,6 +24,7 @@ import { PaymentsPage } from '../features/payments/index.ts';
 import { FittingsPage } from '../features/fittings/index.ts';
 import { CalendarPage } from '../features/calendar/index.ts';
 import { ReceiptsHubPage, OrderReceiptPage } from '../features/receipts/index.ts';
+import { ReportsPage } from '../features/reports/index.ts';
 
 export const router = createBrowserRouter([
   {
@@ -97,6 +98,10 @@ export const router = createBrowserRouter([
       {
         path: 'receipts',
         element: <ReceiptsHubPage />,
+      },
+      {
+        path: 'reports',
+        element: <ReportsPage />,
       },
       {
         path: 'audit-logs',

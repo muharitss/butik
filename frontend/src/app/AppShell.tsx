@@ -14,6 +14,7 @@ import {
   Ruler,
   RotateCcw,
   Receipt,
+  BarChart3,
   Menu,
   RotateCw,
   Sparkles,
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { path: '/fittings', label: 'Fittings', icon: Ruler, id: 'nav-fittings' },
   { path: '/revisions', label: 'Revisions', icon: RotateCcw, id: 'nav-revisions' },
   { path: '/receipts', label: 'Receipts', icon: Receipt, id: 'nav-receipts' },
+  { path: '/reports', label: 'Reports', icon: BarChart3, id: 'nav-reports', permission: 'reports:view' },
   { path: '/audit-logs', label: 'Audit Logs', icon: ShieldCheck, id: 'nav-audit-logs', permission: 'audit:view' },
   { path: '/settings', label: 'Settings', icon: Settings, id: 'nav-settings', permission: 'settings:manage' },
 ];
